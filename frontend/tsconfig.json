@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "target": "es6",
+      "allowJs": true,
+      "module": "nodenext",
+      "jsx": "react",
+      "outDir": "./dist",
+      "strict": true,
+      "esModuleInterop": true
+    },
+    "include": [
+      "src"
+    ]
+  }

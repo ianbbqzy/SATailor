@@ -1,0 +1,42 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack-dev-server .",
+    "build": "webpack ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.22.9",
+    "@babel/core": "^7.22.9",
+    "@babel/preset-env": "^7.22.9",
+    "@babel/preset-flow": "^7.22.5",
+    "@babel/preset-react": "^7.22.5",
+    "@types/react": "^18.2.20",
+    "@types/react-dom": "^18.2.7",
+    "babel-loader": "^9.1.3",
+    "flow-bin": "^0.214.0",
+    "html-webpack-plugin": "^5.5.3",
+    "promises": "^0.2.5",
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.1.6",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  },
+  "dependencies": {
+    "@types/jest": "^29.5.3",
+    "@types/node": "^20.5.0",
+    "axios": "^1.4.0",
+    "n": "^9.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-redux": "^8.1.2",
+    "react-router-dom": "^6.15.0"
+  }
+}
