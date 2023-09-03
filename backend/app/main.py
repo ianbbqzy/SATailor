@@ -1,3 +1,4 @@
+```python
 from fastapi import FastAPI, Request, Depends, HTTPException
 from functools import wraps, lru_cache
 import uvicorn
@@ -9,6 +10,9 @@ import openai
 import os
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+import firebase_admin
+from firebase_admin import auth
+from starlette.status import HTTP_403_FORBIDDEN
 
 import sys
 sys.path.append("..")
@@ -21,10 +25,29 @@ import app.gpt_utils as gpt_utils
 load_dotenv()
 openai.api_key = config.OPENAI_KEY
 
+# Initialize Firebase Admin SDK
+cred = firebase_admin.credentials.Certificate('path/to/serviceAccountKey.json')  # TODO: Replace with the path to your Firebase service account key
+firebase_admin.initialize_app(cred)
 
 #Load app
 app = FastAPI()
 
+# Firebase Authentication middleware
+@app.middleware("http")
+async def check_auth(request: Request, call_next):
+    auth_header = request.headers.get('Authorization')
+    if auth_header:
+        id_token = auth_header.split(' ')[1]
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+            request.state.decoded_token = decoded_token
+        except Exception as e:
+            raise HTTPException(
+                status_code=HTTP_403_FORBIDDEN,
+                detail="Invalid authentication credentials",
+            )
+    response = await call_next(request)
+    return response
 
 #CORS setup (cross-origin thingies)
 origins = [
@@ -39,7 +62,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 #Cache OpenAI client
 @app.get('/')
@@ -70,3 +92,4 @@ async def prompt_general_streaming(request: Request, subject: str, text: str):
 async def prompt_vocab_streaming(request: Request, subject: str, text: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming_vocab(subject, text)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
+```
