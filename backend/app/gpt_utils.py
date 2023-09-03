@@ -1,4 +1,3 @@
-```python
 import openai
 
 class GPTUtils:
@@ -79,4 +78,3 @@ class GPTUtils:
         for message in stream:
             print(message)
             yield message['choices'][0]['delta'].get("content", "")
-```
