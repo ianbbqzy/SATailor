@@ -65,3 +65,8 @@ async def prompt_general_streaming(request: Request, subject: str, text: str):
     #returns HTML of prompt completion
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming(subject, text)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
+
+@app.get('/generate_streaming_vocab')
+async def prompt_vocab_streaming(request: Request, subject: str, text: str):
+    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming_vocab(subject, text)
+    return StreamingResponse(gpt_response, media_type="text/event-stream")
