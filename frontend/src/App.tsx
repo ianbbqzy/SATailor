@@ -1,14 +1,17 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from './components/Home';
+import { UserProvider } from './context/user';
 
 const App = () =>{
     return (
-        <Router>
-            <Routes>
-                <Route path="/" element={<Home />} />
-            </Routes>
-        </Router>
+        <UserProvider>
+            <Router>
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                </Routes>
+            </Router>
+        </UserProvider>
     )
 }
 
