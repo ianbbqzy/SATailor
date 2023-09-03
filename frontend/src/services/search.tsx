@@ -4,9 +4,9 @@ import { auth } from './auth';
 //Set base URL as environment variable
 const baseURL = 'something';
 
-function makeQuery(query: String){
+function makeQuery(query: string){
     const token = auth.currentUser?.getIdToken(true);
-    token.then((idToken) => {
+    token.then((idToken: string | undefined) => {
         axios.get(baseURL, {
             headers: {
                 'Authorization': `Bearer ${idToken}`
@@ -16,10 +16,10 @@ function makeQuery(query: String){
             }
         }).then((response) => {
             console.log(response.data);
-        }).catch((error) => {
+        }).catch((error: Error) => {
             console.error(error);
         });
-    }).catch((error) => {
+    }).catch((error: Error) => {
         console.error(error);
     });
 }
