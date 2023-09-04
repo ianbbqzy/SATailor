@@ -1,4 +1,3 @@
-```python
 from fastapi import FastAPI, Request, Depends, HTTPException
 from functools import wraps, lru_cache
 import uvicorn
@@ -26,7 +25,7 @@ load_dotenv()
 openai.api_key = config.OPENAI_KEY
 
 # Initialize Firebase Admin SDK
-cred = firebase_admin.credentials.Certificate('path/to/serviceAccountKey.json')  # TODO: Replace with the path to your Firebase service account key
+cred = firebase_admin.credentials.Certificate('app/firebaseServiceAccountKey.json')  # TODO: Replace with the path to your Firebase service account key
 firebase_admin.initialize_app(cred)
 
 #Load app
@@ -42,10 +41,12 @@ async def check_auth(request: Request, call_next):
             decoded_token = auth.verify_id_token(id_token)
             request.state.decoded_token = decoded_token
         except Exception as e:
-            raise HTTPException(
-                status_code=HTTP_403_FORBIDDEN,
-                detail="Invalid authentication credentials",
-            )
+            print(f"Exception occurred: {e}")
+            return JSONResponse(content="Invalid authentication credentials", status_code=HTTP_403_FORBIDDEN)
+    else:
+        print("No Authorization header")  # Debugging line
+        return JSONResponse(content="Invalid authentication credentials", status_code=HTTP_403_FORBIDDEN)
+
     response = await call_next(request)
     return response
 
@@ -92,4 +93,3 @@ async def prompt_general_streaming(request: Request, subject: str, text: str):
 async def prompt_vocab_streaming(request: Request, subject: str, text: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming_vocab(subject, text)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
-```

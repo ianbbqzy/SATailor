@@ -6,7 +6,7 @@ const baseURL = 'something';
 
 function makeQuery(query: string){
     const token = auth.currentUser?.getIdToken(true);
-    token.then((idToken: string | undefined) => {
+    token?.then((idToken: string | undefined) => {
         axios.get(baseURL, {
             headers: {
                 'Authorization': `Bearer ${idToken}`

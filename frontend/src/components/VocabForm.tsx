@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { auth } from '../services/auth';
 
 const VocabFormComponent = () => {
     const [subject, setSubject] = useState('');
@@ -8,7 +9,15 @@ const VocabFormComponent = () => {
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         try {
-            const response = await fetch(`http://localhost:8080/generate_streaming_vocab?subject=${subject}&text=${vocabWords}`);
+            const token = await auth.currentUser?.getIdToken(true);
+            const response = await fetch(`http://localhost:8080/generate_streaming_vocab?subject=${subject}&text=${vocabWords}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (!response.ok) {
+                throw Error(`HTTP error! status: ${response.status}`);
+            }
             if (!response.body) {
                 throw Error("ReadableStream not yet supported in this browser.");
             }
