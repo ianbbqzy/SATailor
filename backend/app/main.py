@@ -9,6 +9,9 @@ import openai
 import os
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+import firebase_admin
+from firebase_admin import auth
+from starlette.status import HTTP_403_FORBIDDEN
 
 import sys
 sys.path.append("..")
@@ -21,10 +24,31 @@ import app.gpt_utils as gpt_utils
 load_dotenv()
 openai.api_key = config.OPENAI_KEY
 
+# Initialize Firebase Admin SDK
+cred = firebase_admin.credentials.Certificate('app/firebaseServiceAccountKey.json')  # TODO: Replace with the path to your Firebase service account key
+firebase_admin.initialize_app(cred)
 
 #Load app
 app = FastAPI()
 
+# Firebase Authentication middleware
+@app.middleware("http")
+async def check_auth(request: Request, call_next):
+    auth_header = request.headers.get('Authorization')
+    if auth_header:
+        id_token = auth_header.split(' ')[1]
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+            request.state.decoded_token = decoded_token
+        except Exception as e:
+            print(f"Exception occurred: {e}")
+            return JSONResponse(content="Invalid authentication credentials", status_code=HTTP_403_FORBIDDEN)
+    else:
+        print("No Authorization header")  # Debugging line
+        return JSONResponse(content="Invalid authentication credentials", status_code=HTTP_403_FORBIDDEN)
+
+    response = await call_next(request)
+    return response
 
 #CORS setup (cross-origin thingies)
 origins = [
@@ -39,7 +63,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 #Cache OpenAI client
 @app.get('/')

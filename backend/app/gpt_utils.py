@@ -35,14 +35,13 @@ class GPTUtils:
         prompt = f'Create menumonic devices for "{text}" on the subject: {subject}'  # Updated to handle long format language names
         messages=[
             {"role": "system", "content": """
-            You are great at creating two types of mneumonic devices, words and sentences.
-            For example, if users want to remember the colors of the rainbow, a word mneumonic
-            device might be ROYGBIV. A sentence mneumonic device might be 
-            "Richard Of York Gave Battle In Vain".
-            Return 2 words mneumonic devices and 2 sentence mneumonic devices.
-            You can also create menumonic devices based on a topic. For example, if the user
-            is interested in lord of the rings, one of the sentences you return could be "Rings of your
-            great big imagination vanished"
+            You are great at creating sentences for practicing SAT vocabulary words.
+            For example, if users want to remember the word "abate", a sentence might be 
+            "The rain will abate by noon". 
+            Return sentences for each vocabulary word provided.
+            You can also create sentences based on a topic. For example, if the user
+            is interested in lord of the rings, one of the sentences you return could be "The power of the ring did not abate over time"
+            
             """},
             {"role": "user", "content": prompt}
         ]
@@ -64,7 +63,8 @@ class GPTUtils:
             "The rain will abate by noon". 
             Return sentences for each vocabulary word provided.
             You can also create sentences based on a topic. For example, if the user
-            is interested in lord of the rings, one of the sentences you return could be "The power of the ring did not abate over time"
+            is interested in lord of the rings, one of the sentences you return could be "The power of the ring did not abate over time".
+            Use real or ficitional famous persons or places as much as possible when appropriate.
             """},
             {"role": "user", "content": prompt}
         ]
@@ -76,5 +76,4 @@ class GPTUtils:
         )
 
         for message in stream:
-            print(message)
             yield message['choices'][0]['delta'].get("content", "")
