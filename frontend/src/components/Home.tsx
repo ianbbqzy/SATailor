@@ -33,7 +33,6 @@ const Home = () => {
             ) : (
                 <button onClick={signInWithGoogle}>Sign In with Google</button>
             )}
-            <VocabFormComponent/>
             <NewVocabFormComponent/>
         </div>
     )

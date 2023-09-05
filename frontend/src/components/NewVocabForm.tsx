@@ -19,13 +19,28 @@ const NewVocabFormComponent = () => {
                 throw Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            setResponseText(data.content);
+            setResponseText(JSON.stringify(data.content));
         } catch (error: any) {
             alert(`An error occurred: ${error.message}`);
         }
     };
 
-    // ... existing code ...
+    return (
+        <div style={{ display: 'flex' }}>
+            <div style={{ marginRight: '10px' }}>
+                <form onSubmit={handleSubmit}>
+                    <input type="text" placeholder="Subject of Interest" style={{ display: 'block', marginBottom: '10px' }} value={subject} onChange={(e) => setSubject(e.target.value)} />
+                    <textarea style={{ flex: 1 }} placeholder="Vocabulary Words" value={vocabWords} onChange={(e) => setVocabWords(e.target.value)}></textarea>
+                    <button type="submit">Submit</button>
+                </form>
+                <div>
+                    {responseText.split('\n').map((line, index) => (
+                        <p key={index}>{line}</p>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default NewVocabFormComponent;
