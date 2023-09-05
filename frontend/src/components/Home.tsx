@@ -3,6 +3,7 @@ import { auth, googleProvider } from '../services/auth';
 import { UserContext } from '../context/user';
 import FormComponent from './Form';
 import VocabFormComponent from './VocabForm';
+import NewVocabFormComponent from './NewVocabForm';
 
 const Home = () => {
     const user = useContext(UserContext);
@@ -32,7 +33,7 @@ const Home = () => {
             ) : (
                 <button onClick={signInWithGoogle}>Sign In with Google</button>
             )}
-            <VocabFormComponent/>
+            <NewVocabFormComponent/>
         </div>
     )
 }
