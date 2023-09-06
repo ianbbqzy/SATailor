@@ -4,7 +4,7 @@ import { auth } from '../services/auth';
 const NewVocabFormComponent = () => {
     const [subject, setSubject] = useState('');
     const [vocabWords, setVocabWords] = useState('');
-    const [responseText, setResponseText] = useState('');
+    const [sentences, setSentences] = useState([]);
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -19,9 +19,46 @@ const NewVocabFormComponent = () => {
                 throw Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            setResponseText(JSON.stringify(data.content));
+            setSentences(data.content);
         } catch (error: any) {
             alert(`An error occurred: ${error.message}`);
+        }
+    };
+
+    const handleSave = async (sentence: string, isChecked: boolean) => {
+        if (auth.currentUser) {
+            if (isChecked) {
+                await fetch(`http://localhost:8080/sentence`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${await auth.currentUser.getIdToken(true)}`
+                    },
+                    body: JSON.stringify({
+                        userId: auth.currentUser.uid,
+                        word: subject,
+                        sentence: sentence,
+                        isFavorite: false
+                    })
+                });
+            } else {
+                // Call delete endpoint
+            }
+        }
+    };
+
+    const handleFavorite = async (sentenceId: string, isChecked: boolean) => {
+        if (auth.currentUser) {
+            await fetch(`http://localhost:8080/sentence/${sentenceId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await auth.currentUser.getIdToken(true)}`
+                },
+                body: JSON.stringify({
+                    isFavorite: isChecked
+                })
+            });
         }
     };
 
@@ -34,8 +71,12 @@ const NewVocabFormComponent = () => {
                     <button type="submit">Submit</button>
                 </form>
                 <div>
-                    {responseText.split('\n').map((line, index) => (
-                        <p key={index}>{line}</p>
+                    {sentences.map((item, index) => (
+                        <div key={index}>
+                            <p>{item.word}: {item.sentence}</p>
+                            <input type="checkbox" onChange={(e) => handleSave(item.sentence, e.target.checked)} /> Save
+                            <input type="checkbox" onChange={(e) => handleFavorite(item.sentenceId, e.target.checked)} disabled={!item.isSaved} /> Favorite
+                        </div>
                     ))}
                 </div>
             </div>
