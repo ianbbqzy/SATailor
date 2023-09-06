@@ -12,6 +12,8 @@ from fastapi.encoders import jsonable_encoder
 import firebase_admin
 from firebase_admin import auth
 from starlette.status import HTTP_403_FORBIDDEN
+import boto3
+from boto3.dynamodb.conditions import Key
 
 import sys
 sys.path.append("..")
@@ -27,6 +29,10 @@ openai.api_key = config.OPENAI_KEY
 # Initialize Firebase Admin SDK
 cred = firebase_admin.credentials.Certificate('app/firebaseServiceAccountKey.json')  # TODO: Replace with the path to your Firebase service account key
 firebase_admin.initialize_app(cred)
+
+# Initialize DynamoDB client
+dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
+table = dynamodb.Table('Sentences')
 
 #Load app
 app = FastAPI()
@@ -100,3 +106,35 @@ async def prompt_general_streaming(request: Request, subject: str, text: str):
 async def prompt_vocab_streaming(request: Request, subject: str, text: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming_vocab(subject, text)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
+
+@app.post('/sentence')
+async def add_sentence(user_id: str, word: str, sentence: str, is_favorite: bool):
+    table.put_item(
+        Item={
+            'userId': user_id,
+            'word': word,
+            'sentence': sentence,
+            'isFavorite': is_favorite
+        }
+    )
+
+@app.delete('/sentence/{sentence_id}')
+async def delete_sentence(sentence_id: str):
+    table.delete_item(
+        Key={
+            'sentenceId': sentence_id
+        }
+    )
+
+@app.put('/sentence/{sentence_id}')
+async def toggle_favorite(sentence_id: str, is_favorite: bool):
+    table.update_item(
+        Key={
+            'sentenceId': sentence_id
+        },
+        UpdateExpression="set isFavorite = :f",
+        ExpressionAttributeValues={
+            ':f': is_favorite
+        },
+        ReturnValues="UPDATED_NEW"
+    )
