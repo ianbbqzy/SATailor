@@ -10,7 +10,7 @@ const FormComponent = () => {
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         try {
-            const response = await fetch(`http://localhost:8080/generate_streaming?subject=${input2}&text=${textArea}`);
+            const response = await fetch(`http://localhost:8080/generate_streaming?topic=${input2}&text=${textArea}`);
             if (!response.body) {
                 throw Error("ReadableStream not yet supported in this browser.");
             }
@@ -53,7 +53,7 @@ export default FormComponent;
 // const handleSubmit = async (event: React.FormEvent) => {
 //     event.preventDefault();
 //     try {
-//         const response = await axios.get(`http://localhost:8080/generate?subject=${input2}&text=${textArea}`);
+//         const response = await axios.get(`http://localhost:8080/generate?topic=${input2}&text=${textArea}`);
 //         setResponseText(response.data.content);
 //     } catch (error: any) {
 //         alert(`An error occurred: ${error.message}`);

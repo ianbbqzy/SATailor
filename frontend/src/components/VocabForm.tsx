@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { auth } from '../services/auth';
 
 const VocabFormComponent = () => {
-    const [subject, setSubject] = useState('');
+    const [topic, settopic] = useState('');
     const [vocabWords, setVocabWords] = useState('');
     const [responseText, setResponseText] = useState('');
 
@@ -10,7 +10,7 @@ const VocabFormComponent = () => {
         event.preventDefault();
         try {
             const token = await auth.currentUser?.getIdToken(true);
-            const response = await fetch(`http://localhost:8080/generate_streaming_vocab?subject=${subject}&text=${vocabWords}`, {
+            const response = await fetch(`http://localhost:8080/generate_streaming_vocab?topic=${topic}&text=${vocabWords}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -40,7 +40,7 @@ const VocabFormComponent = () => {
         <div style={{ display: 'flex' }}>
             <div style={{ marginRight: '10px' }}>
                 <form onSubmit={handleSubmit}>
-                    <input type="text" placeholder="Subject of Interest" style={{ display: 'block', marginBottom: '10px' }} value={subject} onChange={(e) => setSubject(e.target.value)} />
+                    <input type="text" placeholder="topic of Interest" style={{ display: 'block', marginBottom: '10px' }} value={topic} onChange={(e) => settopic(e.target.value)} />
                     <textarea style={{ flex: 1 }} placeholder="Vocabulary Words" value={vocabWords} onChange={(e) => setVocabWords(e.target.value)}></textarea>
                     <button type="submit">Submit</button>
                 </form>
