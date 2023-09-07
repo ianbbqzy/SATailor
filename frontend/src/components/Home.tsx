@@ -1,8 +1,6 @@
 import React, { useContext } from 'react';
 import { auth, googleProvider } from '../services/auth';
 import { UserContext } from '../context/user';
-import FormComponent from './Form';
-import VocabFormComponent from './VocabForm';
 import NewVocabFormComponent from './NewVocabForm';
 
 const Home = () => {

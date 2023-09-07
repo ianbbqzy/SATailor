@@ -14,6 +14,15 @@ from firebase_admin import auth
 from starlette.status import HTTP_403_FORBIDDEN
 import boto3
 from boto3.dynamodb.conditions import Key
+from pydantic import BaseModel
+
+class Sentence(BaseModel):
+    userId: str
+    sentenceId: str
+    word: str
+    topic: str
+    sentence: str
+    isFavorite: bool
 
 import sys
 sys.path.append("..")
@@ -81,15 +90,15 @@ def prompt_general(request: Request, text_prompt: str):
     return openai.Completion.create(model="text-davinci-003", prompt=text_prompt)
 
 @app.get('/generate')
-def prompt_general(request: Request, subject: str, text: str):
+def prompt_general(request: Request, topic: str, text: str):
     #returns HTML of prompt completion
-    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt(subject, text)
+    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt(topic, text)
     return JSONResponse(content=jsonable_encoder({"content": gpt_response}))
 
 # returns a list of {'word': 'word', 'sentence': 'sentence'}
 @app.get('/prompt_vocab')
-def prompt_vocab(request: Request, subject: str, text: str):
-    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_vocab(subject, text)
+def prompt_vocab(request: Request, topic: str, text: str):
+    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_vocab(topic, text)
     print(gpt_response)
     return JSONResponse(content=jsonable_encoder({"content": gpt_response}))
 
@@ -97,44 +106,52 @@ from fastapi.responses import StreamingResponse
 import io
 
 @app.get('/generate_streaming')
-async def prompt_general_streaming(request: Request, subject: str, text: str):
+async def prompt_general_streaming(request: Request, topic: str, text: str):
     #returns HTML of prompt completion
-    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming(subject, text)
+    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming(text, topic)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
 
 @app.get('/generate_streaming_vocab')
-async def prompt_vocab_streaming(request: Request, subject: str, text: str):
-    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming_vocab(subject, text)
+async def prompt_vocab_streaming(request: Request, topic: str, text: str):
+    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming_vocab(text, topic)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
 
 @app.post('/sentence')
-async def add_sentence(user_id: str, word: str, sentence: str, is_favorite: bool):
-    table.put_item(
-        Item={
-            'userId': user_id,
-            'word': word,
-            'sentence': sentence,
-            'isFavorite': is_favorite
-        }
-    )
+async def add_sentence(sentence: Sentence):
+    try:
+        table.put_item(
+            Item={
+                'UserId': sentence.userId,
+                'SentenceId': sentence.sentenceId,
+                'Word': sentence.word,
+                'Topic': sentence.topic,
+                'Sentence': sentence.sentence,
+                'IsFavorite': sentence.isFavorite
+            }
+        )
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        raise HTTPException(status_code=400, detail="Error in adding sentence")
 
-@app.delete('/sentence/{sentence_id}')
-async def delete_sentence(sentence_id: str):
+@app.delete('/sentence/{userId}/{sentenceId}')
+async def delete_sentence(userId: str, sentenceId: str):
     table.delete_item(
         Key={
-            'sentenceId': sentence_id
+            'UserId': userId,
+            'SentenceId': sentenceId
         }
     )
 
-@app.put('/sentence/{sentence_id}')
-async def toggle_favorite(sentence_id: str, is_favorite: bool):
+@app.put('/sentence/{userId}/{sentenceId}')
+async def toggle_favorite(userId: str, sentenceId: str, isFavorite: bool):
     table.update_item(
         Key={
-            'sentenceId': sentence_id
+            'UserId': userId,
+            'SentenceId': sentenceId
         },
-        UpdateExpression="set isFavorite = :f",
+        UpdateExpression="set IsFavorite = :f",
         ExpressionAttributeValues={
-            ':f': is_favorite
+            ':f': isFavorite
         },
         ReturnValues="UPDATED_NEW"
     )

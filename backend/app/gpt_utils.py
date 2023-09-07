@@ -1,12 +1,14 @@
 import json
 import openai
+import time
+import re
 
 class GPTUtils:
     def __init__(self, openai_api_key):
         openai.api_key = openai_api_key
 
-    def call_gpt_streaming(self, text, subject):
-        prompt = f'Create menumonic devices for "{text}" on the subject: {subject}'  # Updated to handle long format language names
+    def call_gpt_streaming(self, text, topic):
+        prompt = f'Create menumonic devices for "{text}" on the topic: {topic}'  # Updated to handle long format language names
         messages=[
             {"role": "system", "content": """
             You are great at creating two types of mneumonic devices, words and sentences.
@@ -32,8 +34,8 @@ class GPTUtils:
             print(message)
             yield message['choices'][0]['delta'].get("content", "")
 
-    def call_gpt(self, text, subject):
-        prompt = f'Create menumonic devices for "{text}" on the subject: {subject}'  # Updated to handle long format language names
+    def call_gpt(self, text, topic):
+        prompt = f'Create menumonic devices for "{text}" on the topic: {topic}'  # Updated to handle long format language names
         messages=[
             {"role": "system", "content": """
             You are great at creating sentences for practicing SAT vocabulary words.
@@ -55,8 +57,8 @@ class GPTUtils:
         print(completion.choices[0]['message'])
         return completion.choices[0]['message']['content']
 
-    def call_gpt_streaming_vocab(self, text, subject):
-        prompt = f'Create sentences for practicing SAT vocabulary words "{text}" on the subject: {subject}'
+    def call_gpt_streaming_vocab(self, text, topic):
+        prompt = f'Create sentences for practicing SAT vocabulary words "{text}" on the topic: {topic}'
         messages=[
             {"role": "system", "content": """
             You are great at creating sentences for practicing SAT vocabulary words.
@@ -79,8 +81,8 @@ class GPTUtils:
         for message in stream:
             yield message['choices'][0]['delta'].get("content", "")
 
-    def call_gpt_vocab(self, text, subject):
-        prompt = f'Create sentences for practicing SAT vocabulary words "{text}" on the subject: {subject}'
+    def call_gpt_vocab(self, text, topic):
+        prompt = f'Create sentences for practicing SAT vocabulary words "{text}" on the topic: {topic}'
         messages=[
             {"role": "system", "content": """
             You are great at creating sentences for practicing SAT vocabulary words.
@@ -129,9 +131,7 @@ class GPTUtils:
             # function_name = message["function_call"]["name"]
             function_args = json.loads(remove_trailing_commas(message["function_call"]["arguments"]))
             print(function_args['results'])
-            return list(map(lambda x: {'word': x[0], 'sentence': x[1]}, function_args["results"]))
-        
-import re
+            return list(map(lambda x: {'word': x[0], 'sentence': x[1], 'topic': topic, 'sentenceId': str(time.time()).replace('.', '')}, function_args["results"]))
 
 # GPT leaving occasional trailing commas (getting mixed up with JS objects maybe?) such as in:
 # {results: [[], [],]} instead of {results: [[], []]}
