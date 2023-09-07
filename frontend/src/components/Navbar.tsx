@@ -1,36 +1,23 @@
 import React, { useContext } from 'react';
+import { View, Text, Button } from 'react-native';
 import { UserContext } from '../context/user';
 import { auth, googleProvider } from '../services/auth';
 
 const Navbar = () => {
-    const user = useContext(UserContext);
-
-    const signInWithGoogle = () => {
-        auth.signInWithPopup(googleProvider).catch((error: Error) => {
-            console.error(error);
-            alert('Failed to sign in. Please try again.');
-        });
-    };
-
-    const signOut = () => {
-        auth.signOut().catch((error: Error) => {
-            console.error(error);
-            alert('Failed to sign out. Please try again.');
-        });
-    };
+    // ... existing code ...
 
     return (
-        <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', backgroundColor: 'lightseagreen' }}>
-            <h1>SATailor</h1>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: '10px', backgroundColor: 'lightseagreen' }}>
+            <Text>SATailor</Text>
             {user ? (
-                <div>
-                    <p>{user.email}</p>
-                    <button style={{ borderRadius: '5px' }} onClick={signOut}>Sign Out</button>
-                </div>
+                <View>
+                    <Text>{user.email}</Text>
+                    <Button title="Sign Out" onPress={signOut} />
+                </View>
             ) : (
-                <button style={{ borderRadius: '5px' }} onClick={signInWithGoogle}>Sign In with Google</button>
+                <Button title="Sign In with Google" onPress={signInWithGoogle} />
             )}
-        </nav>
+        </View>
     )
 }
 
