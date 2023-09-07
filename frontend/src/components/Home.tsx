@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { auth, googleProvider } from '../services/auth';
 import { UserContext } from '../context/user';
-import NewVocabFormComponent from './NewVocabForm';
+import VocabFormComponent from './VocabForm';
 
 const Home = () => {
     const user = useContext(UserContext);
@@ -22,7 +22,7 @@ const Home = () => {
 
     return (
         <div>
-            <NewVocabFormComponent/>
+            <VocabFormComponent/>
         </div>
     )
 }

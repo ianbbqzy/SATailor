@@ -1,9 +1,7 @@
-from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi import FastAPI, Request, HTTPException
 from functools import wraps, lru_cache
-import uvicorn
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
-import requests as req
 from datetime import datetime as dt
 import openai
 import os
@@ -15,6 +13,11 @@ from starlette.status import HTTP_403_FORBIDDEN
 import boto3
 from boto3.dynamodb.conditions import Key
 from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
+import sys
+
+import config as config
+import app.gpt_utils as gpt_utils
 
 class Sentence(BaseModel):
     userId: str
@@ -24,12 +27,8 @@ class Sentence(BaseModel):
     sentence: str
     isFavorite: bool
 
-import sys
 sys.path.append("..")
 sys.path.append(".")
-
-import config as config
-import app.gpt_utils as gpt_utils
 
 #Load environment variables
 load_dotenv()
@@ -79,37 +78,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#Cache OpenAI client
-@app.get('/')
-def dummy(request: Request):
-    return 'hello world'
-
-@app.get('/prompt')
-def prompt_general(request: Request, text_prompt: str):
-    #returns HTML of prompt completion
-    return openai.Completion.create(model="text-davinci-003", prompt=text_prompt)
-
-@app.get('/generate')
-def prompt_general(request: Request, topic: str, text: str):
-    #returns HTML of prompt completion
-    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt(topic, text)
-    return JSONResponse(content=jsonable_encoder({"content": gpt_response}))
-
 # returns a list of {'word': 'word', 'sentence': 'sentence'}
 @app.get('/prompt_vocab')
 def prompt_vocab(request: Request, topic: str, text: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_vocab(topic, text)
     print(gpt_response)
     return JSONResponse(content=jsonable_encoder({"content": gpt_response}))
-
-from fastapi.responses import StreamingResponse
-import io
-
-@app.get('/generate_streaming')
-async def prompt_general_streaming(request: Request, topic: str, text: str):
-    #returns HTML of prompt completion
-    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_streaming(text, topic)
-    return StreamingResponse(gpt_response, media_type="text/event-stream")
 
 @app.get('/generate_streaming_vocab')
 async def prompt_vocab_streaming(request: Request, topic: str, text: str):
