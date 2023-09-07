@@ -31,7 +31,7 @@ cred = firebase_admin.credentials.Certificate('app/firebaseServiceAccountKey.jso
 firebase_admin.initialize_app(cred)
 
 # Initialize DynamoDB client
-dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
+dynamodb = boto3.resource('dynamodb', region_name='us-west-2', aws_access_key_id=config.AWS_ACCESS_KEY, aws_secret_access_key=config.AWS_SECRET_KEY)
 table = dynamodb.Table('Sentences')
 
 #Load app
