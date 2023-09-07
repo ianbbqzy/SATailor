@@ -24,15 +24,6 @@ const Home = () => {
 
     return (
         <div>
-            <h1>Welcome to Home Page</h1>
-            {user ? (
-                <div>
-                    <p>Signed in as {user.email}</p>
-                    <button onClick={signOut}>Sign Out</button>
-                </div>
-            ) : (
-                <button onClick={signInWithGoogle}>Sign In with Google</button>
-            )}
             <NewVocabFormComponent/>
         </div>
     )
