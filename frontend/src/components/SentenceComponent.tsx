@@ -106,4 +106,4 @@
             )
     };
 
-    export default SentenceComponent;
+    export { SentenceComponent, Sentence };

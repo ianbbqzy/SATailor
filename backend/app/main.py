@@ -139,6 +139,16 @@ async def get_sentences(request: Request, word: str = None, topic: str = None, i
     if topic:
         filter_expression = filter_expression & Key('Topic').eq(topic)
     if isFavorite is not None:
-        filter_expression = filter_expression & Key('IsFavorite').eq(isFavorite)
+        if isFavorite:
+            filter_expression = filter_expression & Key('IsFavorite').eq(isFavorite)
     response = table.scan(FilterExpression=filter_expression)
-    return JSONResponse(content=jsonable_encoder({"content": response['Items']}))
+    items = response['Items']
+    for item in items:
+        item['userId'] = item.pop('UserId')
+        item['sentenceId'] = item.pop('SentenceId')
+        item['word'] = item.pop('Word')
+        item['topic'] = item.pop('Topic')
+        item['sentence'] = item.pop('Sentence')
+        item['isFavorite'] = item.pop('IsFavorite')
+    return JSONResponse(content=jsonable_encoder({"content": items}))
+
