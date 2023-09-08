@@ -129,3 +129,26 @@ async def toggle_favorite(userId: str, sentenceId: str, isFavorite: bool):
         },
         ReturnValues="UPDATED_NEW"
     )
+
+@app.get('/sentences')
+async def get_sentences(request: Request, word: str = None, topic: str = None, isFavorite: bool = None):
+    userId = request.state.decoded_token['uid']
+    filter_expression = Key('UserId').eq(userId)
+    if word:
+        filter_expression = filter_expression & Key('Word').eq(word)
+    if topic:
+        filter_expression = filter_expression & Key('Topic').eq(topic)
+    if isFavorite is not None:
+        if isFavorite:
+            filter_expression = filter_expression & Key('IsFavorite').eq(isFavorite)
+    response = table.scan(FilterExpression=filter_expression)
+    items = response['Items']
+    for item in items:
+        item['userId'] = item.pop('UserId')
+        item['sentenceId'] = item.pop('SentenceId')
+        item['word'] = item.pop('Word')
+        item['topic'] = item.pop('Topic')
+        item['sentence'] = item.pop('Sentence')
+        item['isFavorite'] = item.pop('IsFavorite')
+    return JSONResponse(content=jsonable_encoder({"content": items}))
+
