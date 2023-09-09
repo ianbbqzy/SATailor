@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { auth } from '../services/auth';
 import { SentenceComponent, Sentence } from './SentenceComponent';
+import { View, TextInput, Button, Alert, ScrollView } from 'react-native'; // Import necessary components from react-native
 
 const VocabFormComponent = () => {
     const [topic, settopic] = useState('');
     const [vocabWords, setVocabWords] = useState('');
     const [sentences, setSentences] = useState<Sentence[]>([]);
 
-    const handleSubmit = async (event: React.FormEvent) => {
-        event.preventDefault();
+    const handleSubmit = async () => {
         try {
             const token = await auth.currentUser?.getIdToken(true);
             const response = await fetch(`http://localhost:8080/prompt_vocab?topic=${topic}&text=${vocabWords}`, {
@@ -27,20 +27,17 @@ const VocabFormComponent = () => {
     };
 
     return (
-        <div style={{ display: 'flex' }}>
-            <div style={{ marginRight: '10px' }}>
-                <form onSubmit={handleSubmit}>
-                    <input type="text" placeholder="topic of Interest" style={{ display: 'block', marginBottom: '10px' }} value={topic} onChange={(e) => settopic(e.target.value)} />
-                    <textarea style={{ flex: 1 }} placeholder="Vocabulary Words" value={vocabWords} onChange={(e) => setVocabWords(e.target.value)}></textarea>
-                    <button type="submit">Submit</button>
-                </form>
-                <div>
+        <View style={{ flexDirection: 'row' }}>
+            <View style={{ marginRight: 10 }}>
+                <TextInput style={{ marginBottom: 10 }} placeholder="topic of Interest" value={topic} onChangeText={(text) => settopic(text)} />
+                <TextInput multiline style={{ flex: 1 }} placeholder="Vocabulary Words" value={vocabWords} onChangeText={(text) => setVocabWords(text)} />
+                <Button title="Submit" onPress={() => handleSubmit()} />                <ScrollView>
                     {sentences.map((item, index) => (
                         <SentenceComponent key={index} sentence={item} />
                     ))}
-                </div>
-            </div>
-        </div>
+                </ScrollView>
+            </View>
+        </View>
     );
 };
 
