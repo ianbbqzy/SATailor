@@ -1,5 +1,6 @@
-    import React, { useState } from 'react';
+import React, { useState } from 'react';
     import { auth } from '../services/auth';
+    import { View, Text, CheckBox, Alert, Platform } from 'react-native'; // Import necessary components from react-native
 
     interface Sentence {
         userId: string;
@@ -93,17 +94,18 @@
         };
 
         return (
-                <div>
-                    <p>{sentence.word}: {sentence.sentence}</p>
-                    <input type="checkbox" checked={sentence.isSaved} onChange={(e) => handleSave(sentence, e.target.checked)} /> Save
-                    <input 
-                        type="checkbox" 
-                        checked={sentence.isFavorite} 
-                        onChange={(e) => handleFavorite(sentence, e.target.checked)} 
-                        disabled={!sentence.isSaved}
-                    /> Favorite                        
-                </div>
-            )
+            <View>
+                <Text>{sentence.word}: {sentence.sentence}</Text>
+                <CheckBox value={sentence.isSaved} onValueChange={(isChecked) => handleSave(sentence, isChecked)} /> 
+                <Text>Save</Text>
+                <CheckBox 
+                    value={sentence.isFavorite} 
+                    onValueChange={(isChecked) => handleFavorite(sentence, isChecked)} 
+                    disabled={!sentence.isSaved}
+                /> 
+                <Text>Favorite</Text>                        
+            </View>
+        );
     };
 
     export { SentenceComponent, Sentence };
