@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
     import { auth } from '../services/auth';
-    import { View, Text, CheckBox, Alert, Platform } from 'react-native'; // Import necessary components from react-native
+    import { View, Text, Switch, Alert, Platform } from 'react-native'; // Import necessary components from react-native
 
     interface Sentence {
         userId: string;
@@ -96,13 +96,16 @@ import React, { useState } from 'react';
         return (
             <View>
                 <Text>{sentence.word}: {sentence.sentence}</Text>
-                <CheckBox value={sentence.isSaved} onValueChange={(isChecked) => handleSave(sentence, isChecked)} /> 
+                <Switch 
+                    value={sentence.isSaved} 
+                    onValueChange={(isChecked) => handleSave(sentence, isChecked)} 
+                />
                 <Text>Save</Text>
-                <CheckBox 
+                <Switch 
                     value={sentence.isFavorite} 
                     onValueChange={(isChecked) => handleFavorite(sentence, isChecked)} 
                     disabled={!sentence.isSaved}
-                /> 
+                />
                 <Text>Favorite</Text>                        
             </View>
         );

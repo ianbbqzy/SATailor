@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { auth } from '../services/auth';
 import { SentenceComponent, Sentence } from './SentenceComponent';
 import { UserContext } from '../context/user';
-import { View, TextInput, CheckBox, Button, ScrollView } from 'react-native'; // Import necessary components from react-native
+import { View, TextInput, Switch, Button, ScrollView, Text } from 'react-native'; // Import necessary components from react-native
 
 const SavedSentences = () => {
     const [sentences, setSentences] = useState<Sentence[]>([]);
@@ -51,12 +51,24 @@ const SavedSentences = () => {
         <View>
             <TextInput placeholder="Word" value={filter.word} onChangeText={text => setFilter({ ...filter, word: text })} />
             <TextInput placeholder="Topic" value={filter.topic} onChangeText={text => setFilter({ ...filter, topic: text })} />
-            <CheckBox value={filter.isFavorite} onValueChange={isChecked => setFilter({ ...filter, isFavorite: isChecked })} />
+            <Switch
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={filter.isFavorite ? "#f5dd4b" : "#f4f3f4"}
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={isChecked => setFilter({ ...filter, isFavorite: isChecked })}
+                value={filter.isFavorite}
+                />
             <Button title="Search" onPress={fetchSentences} />
             <Text>Filter</Text>
             <TextInput placeholder="Word" value={localFilter.word} onChangeText={text => setLocalFilter({ ...localFilter, word: text })} />
             <TextInput placeholder="Topic" value={localFilter.topic} onChangeText={text => setLocalFilter({ ...localFilter, topic: text })} />
-            <CheckBox value={localFilter.isFavorite} onValueChange={isChecked => setLocalFilter({ ...localFilter, isFavorite: isChecked })} />
+            <Switch
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={localFilter.isFavorite ? "#f5dd4b" : "#f4f3f4"}
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={isChecked => setLocalFilter({ ...localFilter, isFavorite: isChecked })}
+                value={localFilter.isFavorite}
+                />
             <ScrollView>
                 {sentences.map((item, index) => (
                     <SentenceComponent key={index} sentence={item} />

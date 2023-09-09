@@ -8,8 +8,7 @@ const VocabFormComponent = () => {
     const [vocabWords, setVocabWords] = useState('');
     const [sentences, setSentences] = useState<Sentence[]>([]);
 
-    const handleSubmit = async (event: React.FormEvent) => {
-        event.preventDefault();
+    const handleSubmit = async () => {
         try {
             const token = await auth.currentUser?.getIdToken(true);
             const response = await fetch(`http://localhost:8080/prompt_vocab?topic=${topic}&text=${vocabWords}`, {
@@ -32,8 +31,7 @@ const VocabFormComponent = () => {
             <View style={{ marginRight: 10 }}>
                 <TextInput style={{ marginBottom: 10 }} placeholder="topic of Interest" value={topic} onChangeText={(text) => settopic(text)} />
                 <TextInput multiline style={{ flex: 1 }} placeholder="Vocabulary Words" value={vocabWords} onChangeText={(text) => setVocabWords(text)} />
-                <Button title="Submit" onPress={handleSubmit} />
-                <ScrollView>
+                <Button title="Submit" onPress={() => handleSubmit()} />                <ScrollView>
                     {sentences.map((item, index) => (
                         <SentenceComponent key={index} sentence={item} />
                     ))}
