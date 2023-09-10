@@ -1,11 +1,18 @@
 import React, { useContext } from 'react';
+import { View, Button, Text, Dimensions } from 'react-native';
 import { UserContext } from '../context/user';
 import { auth, googleProvider } from '../services/auth';
-import { useNavigate } from 'react-router-dom'; // Import the useNavigate hook
+import { useNavigate } from 'react-router-dom';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import Home from './Home';
+import SavedSentences from './SavedSentences';
+
+const Drawer = createDrawerNavigator();
 
 const Navbar = () => {
     const user = useContext(UserContext);
-    const navigate = useNavigate(); // Instantiate the useNavigate hook
+    const navigate = useNavigate();
+    const deviceWidth = Dimensions.get('window').width;
 
     const signInWithGoogle = () => {
         auth.signInWithPopup(googleProvider).catch((error: Error) => {
@@ -29,23 +36,32 @@ const Navbar = () => {
         }
     };
 
-    return (
-        <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', backgroundColor: 'lightseagreen' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-                <h1 style={{ marginRight: '20px' }}>SATailor</h1>
-                <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/')}>Generate</button>
-                <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/saved')}>List</button>
-            </div>
-            {user ? (
-                <div>
-                    <p>{user.email}</p>
-                    <button style={{ borderRadius: '5px' }} onClick={signOut}>Sign Out</button>
-                </div>
-            ) : (
-                <button style={{ borderRadius: '5px' }} onClick={signInWithGoogle}>Sign In with Google</button>
-            )}
-        </nav>
-    )
+    if (deviceWidth > 768) {
+        return (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 10, backgroundColor: 'lightseagreen' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ marginRight: 20 }}>SATailor</Text>
+                    <Button title="Generate" onPress={() => goTo('/')} />
+                    <Button title="List" onPress={() => goTo('/saved')} />
+                </View>
+                {user ? (
+                    <View>
+                        <Text>{user.email}</Text>
+                        <Button title="Sign Out" onPress={signOut} />
+                    </View>
+                ) : (
+                    <Button title="Sign In with Google" onPress={signInWithGoogle} />
+                )}
+            </View>
+        )
+    } else {
+        return (
+            <Drawer.Navigator initialRouteName="Home">
+                <Drawer.Screen name="Generate" component={Home} />
+                <Drawer.Screen name="List" component={SavedSentences} />
+            </Drawer.Navigator>
+        )
+    }
 }
 
 export default Navbar;
