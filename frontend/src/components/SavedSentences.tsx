@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { auth } from '../services/auth';
 import { SentenceComponent, Sentence } from './SentenceComponent';
 import { UserContext } from '../context/user';
-import { View, TextInput, Switch, Button, ScrollView, Text } from 'react-native'; // Import necessary components from react-native
+import { View, TextInput, Switch, Button, ScrollView, Text, StyleSheet, Dimensions } from 'react-native'; // Import necessary components from react-native
 
 const SavedSentences = () => {
     const [sentences, setSentences] = useState<Sentence[]>([]);
@@ -48,7 +48,7 @@ const SavedSentences = () => {
     };
 
     return (
-        <View>
+        <View style={styles.container}>
             <TextInput placeholder="Word" value={filter.word} onChangeText={text => setFilter({ ...filter, word: text })} />
             <TextInput placeholder="Topic" value={filter.topic} onChangeText={text => setFilter({ ...filter, topic: text })} />
             <Switch
@@ -69,7 +69,7 @@ const SavedSentences = () => {
                 onValueChange={isChecked => setLocalFilter({ ...localFilter, isFavorite: isChecked })}
                 value={localFilter.isFavorite}
                 />
-            <ScrollView>
+            <ScrollView contentContainerStyle={styles.grid}>
                 {sentences.map((item, index) => (
                     <SentenceComponent key={index} sentence={item} />
                 ))}
@@ -77,5 +77,17 @@ const SavedSentences = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 10,
+    },
+    grid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+});
 
 export default SavedSentences;
