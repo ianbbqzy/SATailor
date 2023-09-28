@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Button, Text, Dimensions } from 'react-native';
+import { View, Button, Text, Dimensions, Platform } from 'react-native';
 import { UserContext } from '../context/user';
 import { auth, googleProvider } from '../services/auth';
 import { useNavigate } from 'react-router-dom';
@@ -36,7 +36,7 @@ const Navbar = () => {
         }
     };
 
-    if (deviceWidth > 768) {
+    if (Platform.OS === 'web') {
         return (
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 10, backgroundColor: 'lightseagreen' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
