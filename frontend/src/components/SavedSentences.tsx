@@ -40,28 +40,54 @@ const SavedSentences = () => {
     };
 
     const handleLocalFilter = () => {
-        setSentences(originalSentences.filter(sentence => {
+        const newSentences = originalSentences.filter(sentence => {
             return (localFilter.word ? sentence.word.includes(localFilter.word) : true) &&
                 (localFilter.topic ? sentence.topic.includes(localFilter.topic) : true) &&
                 (localFilter.isFavorite === null || localFilter.isFavorite === false ?  true : sentence.isFavorite === localFilter.isFavorite);
-        }));
+        })
+        setSentences(newSentences);
     };
 
     return (
         <View>
-            <TextInput placeholder="Word" value={filter.word} onChangeText={text => setFilter({ ...filter, word: text })} />
-            <TextInput placeholder="Topic" value={filter.topic} onChangeText={text => setFilter({ ...filter, topic: text })} />
+            <Text>Search</Text>
+            <TextInput 
+                style={{ borderColor: 'gray', borderWidth: 1, borderRadius: 5, padding: 5 }} 
+                placeholder="Word" 
+                placeholderTextColor="gray"
+                value={filter.word} 
+                onChangeText={text => setFilter({ ...filter, word: text })} 
+            />
+            <TextInput 
+                style={{ borderColor: 'gray', borderWidth: 1, borderRadius: 5, padding: 5 }} 
+                placeholder="Topic" 
+                placeholderTextColor="gray"
+                value={filter.topic} 
+                onChangeText={text => setFilter({ ...filter, topic: text })} 
+            />
             <Switch
                 trackColor={{ false: "#767577", true: "#81b0ff" }}
                 thumbColor={filter.isFavorite ? "#f5dd4b" : "#f4f3f4"}
                 ios_backgroundColor="#3e3e3e"
                 onValueChange={isChecked => setFilter({ ...filter, isFavorite: isChecked })}
                 value={filter.isFavorite}
-                />
+            />
             <Button title="Search" onPress={fetchSentences} />
-            <Text>Filter</Text>
-            <TextInput placeholder="Word" value={localFilter.word} onChangeText={text => setLocalFilter({ ...localFilter, word: text })} />
-            <TextInput placeholder="Topic" value={localFilter.topic} onChangeText={text => setLocalFilter({ ...localFilter, topic: text })} />
+            <Text>Local Filter</Text>
+            <TextInput 
+                style={{ borderColor: 'gray', borderWidth: 1, borderRadius: 5, padding: 5 }} 
+                placeholder="Word" 
+                placeholderTextColor="gray"
+                value={localFilter.word} 
+                onChangeText={text => setLocalFilter({ ...localFilter, word: text })} 
+            />
+            <TextInput 
+                style={{ borderColor: 'gray', borderWidth: 1, borderRadius: 5, padding: 5 }} 
+                placeholder="Topic" 
+                placeholderTextColor="gray"
+                value={localFilter.topic} 
+                onChangeText={text => setLocalFilter({ ...localFilter, topic: text })} 
+            />
             <Switch
                 trackColor={{ false: "#767577", true: "#81b0ff" }}
                 thumbColor={localFilter.isFavorite ? "#f5dd4b" : "#f4f3f4"}
@@ -70,8 +96,8 @@ const SavedSentences = () => {
                 value={localFilter.isFavorite}
                 />
             <ScrollView>
-                {sentences.map((item, index) => (
-                    <SentenceComponent key={index} sentence={item} />
+                {sentences.map((item) => (
+                    <SentenceComponent key={item.sentenceId} sentence={item} />
                 ))}
             </ScrollView>
         </View>

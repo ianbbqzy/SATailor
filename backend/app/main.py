@@ -81,7 +81,7 @@ app.add_middleware(
 # returns a list of {'word': 'word', 'sentence': 'sentence'}
 @app.get('/prompt_vocab')
 def prompt_vocab(request: Request, topic: str, text: str):
-    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_vocab(topic, text)
+    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_vocab(text, topic)
     print(gpt_response)
     return JSONResponse(content=jsonable_encoder({"content": gpt_response}))
 
