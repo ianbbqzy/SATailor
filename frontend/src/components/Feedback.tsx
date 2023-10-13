@@ -9,18 +9,24 @@ interface Question {
     feedback?: string;
 }
 
-const Feedback = () => {
-    const [questions, setQuestions] = useState<Question[]>([
-        { id: 1, question: 'Some students have a background, identity, interest, or talent that is so meaningful they believe their application would be incomplete without it. If this sounds like you, then please share your story.', answer: '' },
-        { id: 2, question: 'The lessons we take from obstacles we encounter can be fundamental to later success. Recount a time when you faced a challenge, setback, or failure. How did it affect you, and what did you learn from the experience?', answer: '' },
-        // Add more placeholder questions as needed
-    ]);
+interface Question {
+    id: number;
+    question: string;
+    answer: string;
+    feedback?: string;
+    tips?: string;
+}
 
-    const handleInputChange = (id: number, event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const newQuestions = [...questions];
-        const index = newQuestions.findIndex(q => q.id === id);
-        newQuestions[index].answer = event.target.value;
-        setQuestions(newQuestions);
+const QuestionComponent = ({ question }: { question: Question }) => {
+    const [answer, setAnswer] = useState<string>(question.answer);
+    const [feedback, setFeedback] = useState<string | undefined>(question.feedback);
+    const [isModified, setIsModified] = useState<boolean>(false);
+    const [tips, setTips] = useState<string | undefined>(question.tips);
+    const [lastFeedback, setLastFeedback] = useState<string | undefined>(question.feedback);
+
+    const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setAnswer(event.target.value);
+        setIsModified(true);
     };
 
     const getFeedback = async function* (question: string, answer: string) {
@@ -57,55 +63,73 @@ const Feedback = () => {
         }
     };
 
-    const handleFeedback = async (id: number, question: string, answer: string) => {
-        const feedbackGenerator = getFeedback(question, answer);
-        for await (const feedback of feedbackGenerator) {
-            const newQuestions = [...questions];
-            const index = newQuestions.findIndex(q => q.id === id);
-            newQuestions[index].feedback = feedback;
-            console.log(feedback)
-            setQuestions(newQuestions);
+    const handleFeedback = async (question: string, answer: string) => {
+        if (isModified) {
+            setIsModified(false);
+            const feedbackGenerator = getFeedback(question, answer);
+            for await (const feedback of feedbackGenerator) {
+                setFeedback(feedback);
+                setLastFeedback(feedback);
+            }
+        } else {
+            setFeedback(lastFeedback);
         }
     };
 
     return (
+        <Grid item xs={12} key={question.id}>
+            <Paper elevation={3} style={{ padding: '20px', marginBottom: '20px' }}>
+                <Grid container spacing={3}>
+                    <Grid item xs={6}>
+                        <Typography variant="h6" gutterBottom>
+                            {question.question}
+                        </Typography>
+                        <TextField
+                            multiline
+                            minRows={4}
+                            variant="outlined"
+                            fullWidth
+                            value={answer}
+                            onChange={handleInputChange}
+                        />
+                    </Grid>
+                    <Grid item xs={2}>
+                        <Button variant="contained" color="primary" onClick={() => handleFeedback(question.question, answer)} style={{ marginTop: '10px' }}>
+                            Get Feedback
+                        </Button>
+                        <Button variant="contained" color="secondary" onClick={() => setFeedback(question.tips)} style={{ marginTop: '10px' }}>
+                            Show Tips
+                        </Button>
+                    </Grid>
+                    <Grid item xs={4}>
+                        <Typography
+                            variant="body1"
+                            style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}
+                        >
+                            {feedback || ''}
+                        </Typography>
+                    </Grid>
+                </Grid>
+            </Paper>
+        </Grid>
+    );
+};
+
+const Feedback = () => {
+    const questions: Question[] = [
+        { id: 1, question: 'Some students have a background, identity, interest, or talent that is so meaningful they believe their application would be incomplete without it. If this sounds like you, then please share your story.', answer: '', tips: 'Tip 1' },
+        { id: 2, question: 'The lessons we take from obstacles we encounter can be fundamental to later success. Recount a time when you faced a challenge, setback, or failure. How did it affect you, and what did you learn from the experience?', answer: '', tips: 'Tip 2' },
+        // Add more placeholder questions as needed
+    ];
+
+    return (
         <Grid container spacing={3}>
             {questions.map(q => (
-                <Grid item xs={12} key={q.id}>
-                    <Paper elevation={3} style={{ padding: '20px', marginBottom: '20px' }}>
-                        <Grid container spacing={3}>
-                            <Grid item xs={6}>
-                                <Typography variant="h6" gutterBottom>
-                                    {q.question}
-                                </Typography>
-                                <TextField
-                                    multiline
-                                    minRows={4}
-                                    variant="outlined"
-                                    fullWidth
-                                    value={q.answer}
-                                    onChange={event => handleInputChange(q.id, event)}
-                                />
-                            </Grid>
-                            <Grid item xs={2}>
-                                <Button variant="contained" color="primary" onClick={() => handleFeedback(q.id, q.question, q.answer)} style={{ marginTop: '10px' }}>
-                                    Get Feedback
-                                </Button>
-                            </Grid>
-                            <Grid item xs={4}>
-                                <Typography
-                                    variant="body1"
-                                    style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}
-                                >
-                                    {q.feedback || ''}
-                                </Typography>
-                            </Grid>
-                        </Grid>
-                    </Paper>
-                </Grid>
+                <QuestionComponent question={q} />
             ))}
         </Grid>
     );
 };
 
 export default Feedback;
+
