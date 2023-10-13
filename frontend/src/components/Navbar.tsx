@@ -35,6 +35,7 @@ const Navbar = () => {
                 <h1 style={{ marginRight: '20px' }}>SATailor</h1>
                 <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/')}>Generate</button>
                 <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/saved')}>List</button>
+                <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/feedback')}>Feedback</button>
             </div>
             {user ? (
                 <div>

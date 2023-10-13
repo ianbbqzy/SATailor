@@ -1,3 +1,4 @@
+import time
 from fastapi import FastAPI, Request, HTTPException
 from functools import wraps, lru_cache
 from dotenv import load_dotenv
@@ -52,6 +53,7 @@ async def check_auth(request: Request, call_next):
     if auth_header:
         id_token = auth_header.split(' ')[1]
         try:
+            time.sleep(1)  # Adjust the delay as needed
             decoded_token = auth.verify_id_token(id_token)
             request.state.decoded_token = decoded_token
         except Exception as e:
@@ -84,6 +86,11 @@ def prompt_vocab(request: Request, topic: str, text: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_vocab(text, topic)
     print(gpt_response)
     return JSONResponse(content=jsonable_encoder({"content": gpt_response}))
+
+@app.get('/feedback')
+async def get_feedback(request: Request, question: str, answer: str):
+    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).get_feedback(question, answer)
+    return StreamingResponse(gpt_response, media_type="text/event-stream")
 
 @app.get('/generate_streaming_vocab')
 async def prompt_vocab_streaming(request: Request, topic: str, text: str):

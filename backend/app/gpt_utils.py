@@ -133,6 +133,28 @@ class GPTUtils:
             print(function_args['results'])
             return list(map(lambda x: {'word': x[0], 'sentence': x[1], 'topic': topic, 'sentenceId': str(time.time()).replace('.', '')}, function_args["results"]))
 
+    def get_feedback(self, question, answer):
+        prompt = f"""
+        Prompt: {question} 
+        Student Response: {answer}
+        """  # Updated to handle long format language names
+        messages=[
+            {"role": "system", "content": """
+            You are a kind and insightful college application councelor. Given a college application
+            essay prompt and a student's response, you should provide feedback on the student's response.
+            """},
+            {"role": "user", "content": prompt}
+        ]
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-0613",
+            messages=messages,
+            temperature=0.2,
+            stream=True,
+        )
+
+        for message in completion:
+            yield message['choices'][0]['delta'].get("content", "")
+
 # GPT leaving occasional trailing commas (getting mixed up with JS objects maybe?) such as in:
 # {results: [[], [],]} instead of {results: [[], []]}
 def remove_trailing_commas(json_like_str):
