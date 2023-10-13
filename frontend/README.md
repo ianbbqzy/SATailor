@@ -1,18 +1,14 @@
-# Frontend for new LLM app
-We have a React/Typescript application for the frontend
-
-## Source Folder Tree
+# Run FE locally
 ```bash
-.
-├── App.tsx
-├── assets
-├── components
-│   └── SearchBar.tsx
-├── context
-│   └── user.tsx
-├── services
-│   ├── auth.tsx
-│   └── search.tsx
-└── style.css
-4 directories, 6 files
+cd frontend
+npm config set legacy-peer-deps true
+npm install
+npm run start
+```
+
+# Run BE locally
+First copy .env_template to .env, and fill in the secrets
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --host=0.0.0.0 --port=8080
 ```
