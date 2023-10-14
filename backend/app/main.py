@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
 import sys
 
-import config as config
+import app.config as config
 import app.gpt_utils as gpt_utils
 
 class Sentence(BaseModel):
