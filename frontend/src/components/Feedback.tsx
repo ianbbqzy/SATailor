@@ -27,6 +27,8 @@ const Feedback = () => {
         try {
             const token = await auth.currentUser?.getIdToken(true);
             const params = new URLSearchParams({ question, answer });
+            
+            // const response = await fetch(`http://seerlight-dev4.us-east-2.elasticbeanstalk.com/feedback?${params.toString()}`, {
             const response = await fetch(`http://localhost:8080/feedback?${params.toString()}`, {
                 method: 'GET',
                 headers: {
