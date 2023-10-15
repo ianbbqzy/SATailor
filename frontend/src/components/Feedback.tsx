@@ -1,17 +1,10 @@
-import React, { useState, ChangeEvent } from 'react';
-import { Button, TextField, Grid, Paper, Typography } from '@material-ui/core';
+import React, { useState, ChangeEvent, useEffect } from 'react';
+import { Button, TextField, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem } from '@material-ui/core';
 import { auth } from '../services/auth';
 
 interface Question {
     id: number;
-    question: string;
-    answer: string;
-    feedback?: string;
-}
-
-interface Question {
-    id: number;
-    question: string;
+    prompt: string;
     answer: string;
     feedback?: string;
     tips?: string;
@@ -82,7 +75,7 @@ const QuestionComponent = ({ question }: { question: Question }) => {
                 <Grid container spacing={3}>
                     <Grid item xs={6}>
                         <Typography variant="h6" gutterBottom>
-                            {question.question}
+                            {question.prompt}
                         </Typography>
                         <TextField
                             multiline
@@ -94,7 +87,7 @@ const QuestionComponent = ({ question }: { question: Question }) => {
                         />
                     </Grid>
                     <Grid item xs={2}>
-                        <Button variant="contained" color="primary" onClick={() => handleFeedback(question.question, answer)} style={{ marginTop: '10px' }}>
+                        <Button variant="contained" color="primary" onClick={() => handleFeedback(question.prompt, answer)} style={{ marginTop: '10px' }}>
                             Get Feedback
                         </Button>
                         <Button variant="contained" color="secondary" onClick={() => setFeedback(question.tips)} style={{ marginTop: '10px' }}>
@@ -115,16 +108,72 @@ const QuestionComponent = ({ question }: { question: Question }) => {
     );
 };
 
+const questions: Question[] = [
+    { id: 1, prompt: 'Some students have a background, identity, interest, or talent that is so meaningful they believe their application would be incomplete without it. If this sounds like you, then please share your story.', answer: '', tips: 'Tip 1' },
+    { id: 2, prompt: 'The lessons we take from obstacles we encounter can be fundamental to later success. Recount a time when you faced a challenge, setback, or failure. How did it affect you, and what did you learn from the experience?', answer: '', tips: 'Tip 2' },
+    // Add more placeholder questions as needed
+];
+
 const Feedback = () => {
-    const questions: Question[] = [
-        { id: 1, question: 'Some students have a background, identity, interest, or talent that is so meaningful they believe their application would be incomplete without it. If this sounds like you, then please share your story.', answer: '', tips: 'Tip 1' },
-        { id: 2, question: 'The lessons we take from obstacles we encounter can be fundamental to later success. Recount a time when you faced a challenge, setback, or failure. How did it affect you, and what did you learn from the experience?', answer: '', tips: 'Tip 2' },
-        // Add more placeholder questions as needed
-    ];
+    const [questions, setQuestions] = useState<{ [key: string]: Question[] }>({});
+    const [selectedCollege, setSelectedCollege] = useState<string>('');
+
+    useEffect(() => {
+        const fetchEssayPrompts = async () => {
+            try {
+                const token = await auth.currentUser?.getIdToken(true);
+                if (!token) {
+                    return;
+                }
+                const response = await fetch('http://localhost:8080/essay_prompts', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                setQuestions(data.content);
+            } catch (error: any) {
+                alert(`An error occurred: ${error.message}`);
+            }
+        };
+
+
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            if (user) {
+                fetchEssayPrompts();
+            }
+        });
+    
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+    
+    }, []);
+
+    const handleCollegeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+        setSelectedCollege(event.target.value as string);
+    };
 
     return (
         <Grid container spacing={3}>
-            {questions.map(q => (
+            <FormControl variant="outlined" style={{ marginBottom: '20px', marginLeft: '20px', marginTop: '20px', width: '200px' }}>
+                <InputLabel id="college-select-label">College</InputLabel>
+                <Select
+                    labelId="college-select-label"
+                    id="college-select"
+                    value={selectedCollege}
+                    onChange={handleCollegeChange}
+                    label="College"
+                >
+                    {questions && Object.keys(questions).map((college) => (
+                        <MenuItem key={college} value={college}>{college}</MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+            {questions[selectedCollege]?.map(q => (
                 <QuestionComponent question={q} />
             ))}
         </Grid>

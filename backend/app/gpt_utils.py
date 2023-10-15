@@ -159,3 +159,56 @@ class GPTUtils:
 # {results: [[], [],]} instead of {results: [[], []]}
 def remove_trailing_commas(json_like_str):
     return re.sub(r',\s*]', ']', json_like_str)
+
+
+class EssayPrompt:
+    def __init__(self, prompt, word_count) -> None:
+        self.prompt = prompt
+        self.word_count = word_count
+
+    def to_dict(self):
+        return {
+            "prompt": self.prompt,
+            "word_count": self.word_count
+        }
+
+essayPrompts = {
+    "Brown": [
+        EssayPrompt(
+            """
+            Brown's Open Curriculum allows students to explore broadly
+            while also diving deeply into their academic pursuits. Tell us
+            about any academic interests that excite you, and how you might
+            use the Open Curriculum to pursue them while also embracing topics
+            with which you are unfamiliar.
+            """,
+        250).to_dict(),
+        EssayPrompt(
+            """
+            Students entering Brown often find that making their home on
+            College Hill naturally invites reflection on where they came from.
+            Share how an aspect of your growing up has inspired or challenged
+            you, and what unique contributions this might allow you to make to
+            the Brown community.
+            """,
+        250).to_dict(),
+        EssayPrompt(
+            """
+            Brown students care deeply about their work and the world around
+            them. Students find contentment, satisfaction, and meaning in
+            daily interactions and major discoveries. Whether big or small,
+            mundane or spectacular, tell us about something that brings you joy. 
+            """,
+        250).to_dict(),
+    ],
+    "Columbia": [
+        EssayPrompt(
+            """List a selection of texts, resources and outlets that have
+            contributed to your intellectual development outside of academic
+            courses, including but not limited to books, journals, websites,
+            podcasts, essays, plays, presentations, videos, museums and other
+            content that you enjoy. (100 words or fewer)
+            """
+        , 100).to_dict()
+    ]
+}
