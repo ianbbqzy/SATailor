@@ -26,7 +26,7 @@ const SentenceComponent = (props: {sentence: Sentence}) => {
                     // Optimistically update the state
                     setSentence(prevSentence => ({...prevSentence, isSaved: true}));
 
-                    const response = await fetch(`http://localhost:8080/sentence`, {
+                    const response = await fetch(`${process.env.BACKEND_URL}/sentence`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -52,7 +52,7 @@ const SentenceComponent = (props: {sentence: Sentence}) => {
                     setSentence(prevSentence => ({...prevSentence, isSaved: false, isFavorite: false}));
 
                     // Call delete endpoint
-                    const response = await fetch(`http://localhost:8080/sentence/${auth.currentUser.uid}/${sentence.sentenceId}`, {
+                    const response = await fetch(`${process.env.BACKEND_URL}/sentence/${auth.currentUser.uid}/${sentence.sentenceId}`, {
                         method: 'DELETE',
                         headers: {
                             'Authorization': `Bearer ${await auth.currentUser.getIdToken(true)}`

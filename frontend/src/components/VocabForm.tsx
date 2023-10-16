@@ -11,7 +11,7 @@ const VocabFormComponent = () => {
     const handleSubmit = async () => {
         try {
             const token = await auth.currentUser?.getIdToken(true);
-            const response = await fetch(`http://localhost:8080/prompt_vocab?topic=${topic}&text=${vocabWords}`, {
+            const response = await fetch(`${process.env.BACKEND_URL}/prompt_vocab?topic=${topic}&text=${vocabWords}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

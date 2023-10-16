@@ -25,7 +25,7 @@ const SavedSentences = () => {
 
     const fetchSentences = async () => {
         const token = await auth.currentUser?.getIdToken(true);
-        const response = await fetch(`http://localhost:8080/sentences?word=${filter.word}&topic=${filter.topic}&isFavorite=${filter.isFavorite}`, {
+        const response = await fetch(`${process.env.BACKEND_URL}/sentences?word=${filter.word}&topic=${filter.topic}&isFavorite=${filter.isFavorite}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
