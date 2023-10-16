@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, useEffect } from 'react';
-import { Button, TextField, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem } from '@material-ui/core';
+import { Button, TextField, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem, Tabs, Tab, Box } from '@material-ui/core';
 import { auth } from '../services/auth';
 
 interface Question {
@@ -14,8 +14,8 @@ const QuestionComponent = ({ question }: { question: Question }) => {
     const [answer, setAnswer] = useState<string>(question.answer);
     const [feedback, setFeedback] = useState<string | undefined>(question.feedback);
     const [isModified, setIsModified] = useState<boolean>(false);
-    const [tips, setTips] = useState<string | undefined>(question.tips);
     const [lastFeedback, setLastFeedback] = useState<string | undefined>(question.feedback);
+    const [tab, setTab] = useState<string>('tips');
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setAnswer(event.target.value);
@@ -59,6 +59,7 @@ const QuestionComponent = ({ question }: { question: Question }) => {
     const handleFeedback = async (question: string, answer: string) => {
         if (isModified) {
             setIsModified(false);
+            setFeedback('getting feedback...');
             const feedbackGenerator = getFeedback(question, answer);
             for await (const feedback of feedbackGenerator) {
                 setFeedback(feedback);
@@ -69,38 +70,56 @@ const QuestionComponent = ({ question }: { question: Question }) => {
         }
     };
 
+    const handleTabChange = (event?: React.ChangeEvent<{}>, newValue?: string) => {
+        setTab(newValue || 'tips');
+        if (newValue === 'tips') {
+            setFeedback(question.tips);
+        } else {
+            handleFeedback(question.prompt, answer);
+        }
+    };
+
     return (
         <Grid item xs={12} key={question.id}>
             <Paper elevation={3} style={{ padding: '20px', marginBottom: '20px' }}>
                 <Grid container spacing={3}>
                     <Grid item xs={6}>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography variant="body1" gutterBottom>
                             {question.prompt}
                         </Typography>
                         <TextField
                             multiline
-                            minRows={4}
+                            minRows={10}
                             variant="outlined"
                             fullWidth
                             value={answer}
                             onChange={handleInputChange}
                         />
-                    </Grid>
-                    <Grid item xs={2}>
-                        <Button variant="contained" color="primary" onClick={() => handleFeedback(question.prompt, answer)} style={{ marginTop: '10px' }}>
+                        <Button variant="contained" color="primary" onClick={() => handleTabChange(undefined, 'feedback')} style={{ marginTop: '10px' }}>
                             Get Feedback
                         </Button>
-                        <Button variant="contained" color="secondary" onClick={() => setFeedback(question.tips)} style={{ marginTop: '10px' }}>
-                            Show Tips
-                        </Button>
                     </Grid>
-                    <Grid item xs={4}>
-                        <Typography
-                            variant="body1"
-                            style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}
-                        >
-                            {feedback || ''}
-                        </Typography>
+                    <Grid item xs={6}>
+                        <Tabs value={tab} onChange={handleTabChange} aria-label="feedback and tips tabs" style={{ marginTop: '10px' }}>
+                            <Tab label="Tips" value="tips" />
+                            <Tab label="Feedback" value="feedback" />
+                        </Tabs>
+                        <TabPanel value={tab} index="feedback">
+                            <Typography
+                                variant="body1"
+                                style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}
+                            >
+                                {feedback || ''}
+                            </Typography>
+                        </TabPanel>
+                        <TabPanel value={tab} index="tips">
+                            <Typography
+                                variant="body1"
+                                style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}
+                            >
+                                {question.tips || ''}
+                            </Typography>
+                        </TabPanel>
                     </Grid>
                 </Grid>
             </Paper>
@@ -108,11 +127,31 @@ const QuestionComponent = ({ question }: { question: Question }) => {
     );
 };
 
-const questions: Question[] = [
-    { id: 1, prompt: 'Some students have a background, identity, interest, or talent that is so meaningful they believe their application would be incomplete without it. If this sounds like you, then please share your story.', answer: '', tips: 'Tip 1' },
-    { id: 2, prompt: 'The lessons we take from obstacles we encounter can be fundamental to later success. Recount a time when you faced a challenge, setback, or failure. How did it affect you, and what did you learn from the experience?', answer: '', tips: 'Tip 2' },
-    // Add more placeholder questions as needed
-];
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: any;
+    value: any;
+  }
+  
+  function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+  
+    return (
+      <div
+        role="tabpanel"
+        hidden={value !== index}
+        id={`simple-tabpanel-${index}`}
+        aria-labelledby={`simple-tab-${index}`}
+        {...other}
+      >
+        {value === index && (
+          <Box p={3}>
+            <Typography>{children}</Typography>
+          </Box>
+        )}
+      </div>
+    );
+  }
 
 const Feedback = () => {
     const [questions, setQuestions] = useState<{ [key: string]: Question[] }>({});
