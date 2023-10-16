@@ -162,14 +162,16 @@ def remove_trailing_commas(json_like_str):
 
 
 class EssayPrompt:
-    def __init__(self, prompt, word_count) -> None:
+    def __init__(self, prompt, word_count, tips) -> None:
         self.prompt = prompt
         self.word_count = word_count
+        self.tips = tips
 
     def to_dict(self):
         return {
             "prompt": self.prompt,
-            "word_count": self.word_count
+            "word_count": self.word_count,
+            "tips": self.tips
         }
 
 essayPrompts = {
@@ -182,7 +184,8 @@ essayPrompts = {
             use the Open Curriculum to pursue them while also embracing topics
             with which you are unfamiliar.
             """,
-        250).to_dict(),
+        250,
+        "tip1").to_dict(),
         EssayPrompt(
             """
             Students entering Brown often find that making their home on
@@ -191,7 +194,8 @@ essayPrompts = {
             you, and what unique contributions this might allow you to make to
             the Brown community.
             """,
-        250).to_dict(),
+        250,
+        "tip2").to_dict(),
         EssayPrompt(
             """
             Brown students care deeply about their work and the world around
@@ -199,7 +203,8 @@ essayPrompts = {
             daily interactions and major discoveries. Whether big or small,
             mundane or spectacular, tell us about something that brings you joy. 
             """,
-        250).to_dict(),
+        250,
+        "tip3").to_dict(),
     ],
     "Columbia": [
         EssayPrompt(
@@ -209,6 +214,6 @@ essayPrompts = {
             podcasts, essays, plays, presentations, videos, museums and other
             content that you enjoy. (100 words or fewer)
             """
-        , 100).to_dict()
+        , 100, "tip1").to_dict()
     ]
 }
