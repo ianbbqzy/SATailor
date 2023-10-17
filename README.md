@@ -1,4 +1,5 @@
 # Run FE locally
+# set backend URL to be `http://localhost:8080` in `frontend/.env`
 ```bash
 cd frontend
 npm config set legacy-peer-deps true
@@ -16,5 +17,20 @@ uvicorn app.main:app --host=0.0.0.0 --port=8080
 ```
 
 # Run BE on aws
-Restore the environment seerlight-dev4 on the aws console (or create a new one with `eb create`)
-then swap "localhost:8080" with "seerlight-dev4.us-east-2.elasticbeanstalk.com"
+```bash
+eb deploy
+```
+Restore the environment seerlight-dev on the aws console (or create a new one with `eb create`)
+
+## self sign certificate
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/configuring-https-ssl.html
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/configuring-https-ssl-upload.html
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/configuring-https-elb.html
+
+# Deploy FE
+# set backend URL to be the AWS URL in `frontend/.env`
+```bash
+npm run predeploy
+npm run deploy
+```
+https://github.com/gitname/react-gh-pages

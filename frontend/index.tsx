@@ -7,7 +7,7 @@ import App from './src/App';
 // const root = createRoot(container);
 // root.render(<App/>);
 
-
+// https://maximorlov.com/deploying-to-github-pages-dont-forget-to-fix-your-links/
 ReactDOM.render(
     <React.StrictMode>
         <App />

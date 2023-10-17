@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "homepage": "https://ianbbqzy.github.io/SATailor",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack-dev-server .",
-    "build": "webpack ."
+    "build": "webpack .",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "keywords": [],
   "author": "",
@@ -20,8 +23,12 @@
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
     "babel-loader": "^9.1.3",
+    "dotenv": "^16.3.1",
+    "dotenv-webpack": "^8.0.1",
     "flow-bin": "^0.214.0",
+    "gh-pages": "^6.0.0",
     "html-webpack-plugin": "^5.5.3",
+    "node-polyfill-webpack-plugin": "^2.0.1",
     "promises": "^0.2.5",
     "ts-loader": "^9.4.4",
     "typescript": "^5.1.6",

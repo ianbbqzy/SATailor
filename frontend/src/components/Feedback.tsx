@@ -28,7 +28,7 @@ const QuestionComponent = ({ question }: { question: Question }) => {
             const params = new URLSearchParams({ question, answer });
             
             // const response = await fetch(`http://seerlight-dev4.us-east-2.elasticbeanstalk.com/feedback?${params.toString()}`, {
-            const response = await fetch(`http://localhost:8080/feedback?${params.toString()}`, {
+            const response = await fetch(`${process.env.BACKEND_URL}/feedback?${params.toString()}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -164,7 +164,7 @@ const Feedback = () => {
                 if (!token) {
                     return;
                 }
-                const response = await fetch('http://localhost:8080/essay_prompts', {
+                const response = await fetch(`${process.env.BACKEND_URL}/essay_prompts`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`
