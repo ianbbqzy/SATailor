@@ -92,6 +92,11 @@ async def get_feedback(request: Request, question: str, answer: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).get_feedback(question, answer)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
 
+@app.get('/suggestion')
+async def get_suggestion(request: Request, question: str, notes: str):
+    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).get_suggestion(question, notes)
+    return StreamingResponse(gpt_response, media_type="text/event-stream")
+
 @app.get('/essay_prompts')
 async def get_essay_prompts(request: Request):
     return JSONResponse(content=jsonable_encoder({"content": gpt_utils.essayPrompts}))
