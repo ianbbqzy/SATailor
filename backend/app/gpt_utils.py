@@ -174,6 +174,29 @@ be very encouraging. End on a positive note.
         for message in completion:
             yield message['choices'][0]['delta'].get("content", "")
 
+    def get_suggestion(self, question, notes):
+        prompt = f"""
+        Prompt: {question} 
+        Student's notes: {notes}
+        """  # Updated to handle long format language names
+        messages=[
+            {"role": "system", "content": """
+            You are a kind and insightful college application councelor. Given a college application
+            essay prompt and a student's notes for brainstorming, you should provide guidence on which part of
+            a student's notes is relevant to the prompt and get them started on writing a response.
+            """},
+            {"role": "user", "content": prompt}
+        ]
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-0613",
+            messages=messages,
+            temperature=0.2,
+            stream=True,
+        )
+
+        for message in completion:
+            yield message['choices'][0]['delta'].get("content", "")
+
 # GPT leaving occasional trailing commas (getting mixed up with JS objects maybe?) such as in:
 # {results: [[], [],]} instead of {results: [[], []]}
 def remove_trailing_commas(json_like_str):
@@ -204,7 +227,7 @@ essayPrompts = {
             with which you are unfamiliar.
             """,
         250,
-        "tip1").to_dict(),
+        "Paste your resume into the notes to get brainstorming!").to_dict(),
         EssayPrompt(
             """
             Students entering Brown often find that making their home on
@@ -214,7 +237,7 @@ essayPrompts = {
             the Brown community.
             """,
         250,
-        "tip2").to_dict(),
+        "Paste your resume into the notes to get brainstorming!").to_dict(),
         EssayPrompt(
             """
             Brown students care deeply about their work and the world around
@@ -223,7 +246,7 @@ essayPrompts = {
             mundane or spectacular, tell us about something that brings you joy. 
             """,
         250,
-        "tip3").to_dict(),
+        "Paste your resume into the notes to get brainstorming!").to_dict(),
     ],
     "Columbia": [
         EssayPrompt(
@@ -233,6 +256,6 @@ essayPrompts = {
             podcasts, essays, plays, presentations, videos, museums and other
             content that you enjoy. (100 words or fewer)
             """
-        , 100, "tip1").to_dict()
+        , 100, "Paste your resume into the notes to get brainstorming!").to_dict()
     ]
 }
