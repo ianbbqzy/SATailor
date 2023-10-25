@@ -37,9 +37,9 @@ const Navbar = () => {
                 <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/saved')}>List</button>
                 <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/feedback')}>Feedback</button>
             </div>
-            {user ? (
+            {user && user.user ? (
                 <div>
-                    <p>{user.email}</p>
+                    <p>{user.user.email}</p>
                     <button style={{ borderRadius: '5px' }} onClick={signOut}>Sign Out</button>
                 </div>
             ) : (
