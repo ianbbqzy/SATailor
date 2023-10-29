@@ -1,7 +1,10 @@
-import React, { useState, ChangeEvent, useEffect } from 'react';
+import React, { useState, ChangeEvent, useEffect, useRef } from 'react';
 import { Button, TextField, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem, Tabs, Tab, Box } from '@material-ui/core';
 import { auth } from '../services/auth';
+import { Marker } from "react-mark.js";
+import { User } from 'firebase/auth';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import Tiptap from './Tiptap';
 
 interface Question {
     id: number;
@@ -11,19 +14,32 @@ interface Question {
     tips?: string;
 }
 
+interface Feedback {
+    excerpt_feedbacks: {excerpt: string, feedback: string}[];
+    general_overview: string;
+    conclusion: string;
+}
+
 const QuestionComponent = ({ question }: { question: Question }) => {
-    const [answer, setAnswer] = useState<string>(question.answer);
+    // const [answer, setAnswer] = useState<string>(question.answer);
     const [notes, setNotes] = useState<string>("");
-    const [feedback, setFeedback] = useState<string | undefined>("No response submitted yet.");
+    const [feedback, setFeedback] = useState<Feedback>({
+        excerpt_feedbacks: [],
+        general_overview: "No response submitted yet.",
+        conclusion: ""
+    });
     const [suggestion, setSuggestion] = useState<string | undefined>("No notes submitted yet.");
-    const [isAnswerModified, setIsAnswerModified] = useState<boolean>(false);
+    const isAnswerModified = useRef<boolean>(false);
+    const answer = useRef<string>('');
     const [isNotesModified, setIsNotesModified] = useState<boolean>(false);
     const [guideTab, setGuideTab] = useState<string>('tips');
     const [promptTab, setPromptTab] = useState<string>('notes');
+    const [highlight, setHighlight] = useState<string>('');
 
-    const handleAnswerChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setAnswer(event.target.value);
-        setIsAnswerModified(true);
+    const handleAnswerChange = (modifiedAnswer: string) => {
+        answer.current = modifiedAnswer;
+        // setIsAnswerModified(true);
+        isAnswerModified.current = true;
     };
 
     const handleNotesChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -31,13 +47,13 @@ const QuestionComponent = ({ question }: { question: Question }) => {
         setIsNotesModified(true);
     };
 
-    const getFeedback = async function* (question: string, answer: string) {
+    const getFeedback = async function (question: string, answer: string) {
         try {
             const token = await auth.currentUser?.getIdToken(true);
             const params = new URLSearchParams({ question, answer });
             
             // const response = await fetch(`http://seerlight-dev4.us-east-2.elasticbeanstalk.com/feedback?${params.toString()}`, {
-            const response = await fetch(`${process.env.BACKEND_URL}/feedback?${params.toString()}`, {
+            const response = await fetch(`${process.env.BACKEND_URL}/formatted_feedback?${params.toString()}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -46,20 +62,8 @@ const QuestionComponent = ({ question }: { question: Question }) => {
             if (!response.ok) {
                 throw Error(`HTTP error! status: ${response.status}`);
             }
-            if (!response.body) {
-                throw Error("ReadableStream not yet supported in this browser.");
-            }
-            const reader = response.body.getReader();
-            let chunks = '';
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) {
-                    break;
-                }
-                chunks += new TextDecoder("utf-8").decode(value)
-
-                yield chunks;
-            }
+            const data = await response.json();
+            setFeedback(data.content);
         } catch (error: any) {
             alert(`An error occurred: ${error.message}`);
         }
@@ -101,13 +105,13 @@ const QuestionComponent = ({ question }: { question: Question }) => {
 
     const handleFeedback = async () => {
         setGuideTab('feedback');
-        if (isAnswerModified) {
-            setIsAnswerModified(false);
-            setFeedback('getting feedback...');
-            const feedbackGenerator = getFeedback(question.prompt, answer);
-            for await (const feedback of feedbackGenerator) {
-                setFeedback(feedback);
-            }
+        if (isAnswerModified.current) {
+            isAnswerModified.current = false;
+            setFeedback({
+                ...feedback,
+                "general_overview": "getting feedback..."
+            })
+            getFeedback(question.prompt, answer.current)
         }
     };
 
@@ -131,6 +135,11 @@ const QuestionComponent = ({ question }: { question: Question }) => {
         setPromptTab(newValue || 'response');
     };
 
+    const highlightExcerpt = (excerpt: string) => {
+        // const highlightedAnswer = answer.replace(excerpt, `<mark>${excerpt}</mark>`);
+        setHighlight(excerpt);
+    };
+
     return (
         <Grid item xs={12} key={question.id}>
             <Paper elevation={3} style={{ padding: '20px', marginBottom: '20px' }}>
@@ -144,14 +153,29 @@ const QuestionComponent = ({ question }: { question: Question }) => {
                             <Tab label="Response" value="response" />
                         </Tabs>
                         <TabPanel value={promptTab} index="response">
-                            <TextField
-                                multiline
-                                minRows={10}
-                                variant="outlined"
-                                fullWidth
-                                value={answer}
-                                onChange={handleAnswerChange}
-                            />
+                            {/* <Marker mark={highlight}>
+                                <Typography 
+                                    contentEditable={true} 
+                                    suppressContentEditableWarning={true} 
+                                    gutterBottom 
+                                    variant="h5" 
+                                    component="h2"
+                                    onInput={(e: React.FormEvent<HTMLHeadingElement>) => handleAnswerChange(e.currentTarget.textContent || '')}
+                                >
+                                    {answer}
+                                </Typography>
+                            </Marker> */}
+                            {/* <Marker mark={"highlight me"}>
+                                <TextField
+                                    multiline
+                                    minRows={10}
+                                    variant="outlined"
+                                    fullWidth
+                                    value={answer}
+                                    onChange={handleAnswerChange}
+                                />
+                            </Marker> */}
+                            <Tiptap highlight={highlight} onChange={handleAnswerChange}/>
                             <Button variant="contained" color="primary" onClick={() => handleFeedback()} style={{ marginTop: '10px' }}>
                                 Get Feedback
                             </Button>
@@ -177,12 +201,7 @@ const QuestionComponent = ({ question }: { question: Question }) => {
                             <Tab label="Feedback" value="feedback" />
                         </Tabs>
                         <TabPanel value={guideTab} index="feedback">
-                            <Typography
-                                variant="body1"
-                                style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}
-                            >
-                                {feedback || ''}
-                            </Typography>
+                            <DetailedFeedback feedback={feedback} highlightExcerpt={highlightExcerpt} />
                         </TabPanel>
                         <TabPanel value={guideTab} index="suggestion">
                             <Typography
@@ -207,10 +226,49 @@ const QuestionComponent = ({ question }: { question: Question }) => {
     );
 };
 
+const DetailedFeedback = ({ feedback, highlightExcerpt }: { feedback: Feedback, highlightExcerpt: (excerpt: string) => void }) => {
+    return <>
+            <Typography
+                variant="body1"
+                style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}
+            >
+                {feedback.general_overview || ''}
+            </Typography>
+            {/* List the excerpt feedback below. */}
+            {feedback.excerpt_feedbacks.map((excerpt_feedback, index) => (
+                <div key={index} 
+                    //  onMouseOver={() => highlightExcerpt(excerpt_feedback.excerpt)} 
+                     style={{border: '1px solid #ccc', borderRadius: '5px', padding: '10px', boxShadow: '0px 0px 5px rgba(0,0,0,0.1)', transition: 'box-shadow 0.3s ease'}}
+                     onMouseEnter={(e) => { 
+                         e.currentTarget.style.boxShadow = '0px 0px 10px rgba(0,0,0,0.3)';
+                         highlightExcerpt(excerpt_feedback.excerpt);
+                     }}
+                     onMouseLeave={(e) => {
+                         e.currentTarget.style.boxShadow = '0px 0px 5px rgba(0,0,0,0.1)';
+                         highlightExcerpt("");
+                     }}
+                >
+                    <Typography variant="body1" style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}>
+                        {`Excerpt: ${excerpt_feedback.excerpt}`}
+                    </Typography>
+                    <Typography variant="body1" style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}>
+                        {`Feedback: ${excerpt_feedback.feedback}`}
+                    </Typography>
+                </div>
+            ))}
+            <Typography
+                variant="body1"
+                style={{ marginTop: '10px', whiteSpace: 'pre-wrap' }}
+            >
+                {feedback.conclusion || ''}
+            </Typography>
+        </>
+}
+
 interface TabPanelProps {
     children?: React.ReactNode;
-    index: any;
-    value: any;
+    index: string;
+    value: string;
   }
   
   function TabPanel(props: TabPanelProps) {
@@ -233,7 +291,7 @@ interface TabPanelProps {
     );
   }
 
-const Feedback = () => {
+const FeedbackPage = () => {
     const [questions, setQuestions] = useState<{ [key: string]: Question[] }>({});
     const [selectedCollege, setSelectedCollege] = useState<string>('');
 
@@ -259,7 +317,6 @@ const Feedback = () => {
                 alert(`An error occurred: ${error.message}`);
             }
         };
-
 
         const auth = getAuth();
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -300,5 +357,5 @@ const Feedback = () => {
     );
 };
 
-export default Feedback;
+export default FeedbackPage;
 

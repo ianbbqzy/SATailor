@@ -5,6 +5,7 @@ import Navbar from './components/Navbar'; // Import the Navbar component
 import { UserProvider } from './context/user';
 import SavedSentences from './components/SavedSentences'; // Import the SavedSentences component
 import Feedback from './components/Feedback';
+import FeedbackPage from "./components/FormattedFeedback";
 
 const App = () =>{
     return (
@@ -15,6 +16,7 @@ const App = () =>{
                     <Route path="/" element={<Home />} />
                     <Route path="/saved" element={<SavedSentences />} /> {/* Add a new route for the SavedSentences component */}
                     <Route path="/feedback" element={<Feedback />} /> {/* Add a new route for the SavedSentences component */}
+                    <Route path="/feedback_page" element={<FeedbackPage />} /> {/* Add a new route for the SavedSentences component */}
                 </Routes>
             </Router>
         </UserProvider>
