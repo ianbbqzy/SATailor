@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { auth } from '../services/auth';
 import { UserContext } from '../context/user';
-import { TextField, Button } from '@material-ui/core';
+import { TextField, Button, Typography, CardMedia, Card, CardContent } from '@material-ui/core';
 
 const Profile = () => {
     const [resume, setResume] = useState<string>('');
@@ -9,7 +8,7 @@ const Profile = () => {
 
     const handleSave = async () => {
         try {
-            const token = await auth.currentUser?.getIdToken(true);
+            const token = await user?.getIdToken(true);
             const response = await fetch(`${process.env.BACKEND_URL}/resume`, {
                 method: 'POST',
                 headers: {
@@ -17,7 +16,6 @@ const Profile = () => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    userId: user?.uid,
                     resume: resume
                 })
             });
@@ -31,7 +29,7 @@ const Profile = () => {
 
     const fetchResume = async () => {
         try {
-            const token = await auth.currentUser?.getIdToken(true);
+            const token = await user?.getIdToken(true);
             const response = await fetch(`${process.env.BACKEND_URL}/resume`, {
                 method: 'GET',
                 headers: {
@@ -56,6 +54,20 @@ const Profile = () => {
 
     return (
         <div>
+            <Typography variant="h4">User Profile</Typography>
+            <Card>
+                <CardMedia
+                    component="img"
+                    alt="Profile Picture"
+                    height="140"
+                    image={user?.photoURL || ""}
+                />
+                <CardContent>
+                    <Typography variant="h5">{user?.displayName}</Typography>
+                    <Typography variant="body1">{user?.email}</Typography>
+                </CardContent>
+            </Card>
+            <Typography variant="h4" style={{ marginTop: '20px' }}>Resume</Typography>
             <TextField
                 multiline
                 minRows={10}
@@ -63,6 +75,7 @@ const Profile = () => {
                 fullWidth
                 value={resume}
                 onChange={(e) => setResume(e.target.value)}
+                label="Enter your resume here"
             />
             <Button variant="contained" color="primary" onClick={handleSave} style={{ marginTop: '10px' }}>
                 Save
