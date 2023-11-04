@@ -37,6 +37,7 @@ const Navbar = () => {
                 <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/saved')}>List</button>
                 <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/feedback')}>Feedback</button>
                 <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/feedback_page')}>Feedback Page</button>
+                <button style={{ borderRadius: '5px', marginRight: '10px' }} onClick={() => goTo('/profile')}>Profile</button>
             </div>
             {user ? (
                 <div>
