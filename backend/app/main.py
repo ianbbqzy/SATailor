@@ -173,3 +173,13 @@ async def get_sentences(request: Request, word: str = None, topic: str = None, i
         item['isFavorite'] = item.pop('IsFavorite')
     return JSONResponse(content=jsonable_encoder({"content": items}))
 
+@app.post('/resume')
+async def save_resume(request: Request, resume_text: str):
+    userId = request.state.decoded_token['uid']
+    table.put_item(
+        Item={
+            'UserId': userId,
+            'ResumeText': resume_text
+        }
+    )
+    return JSONResponse(content=jsonable_encoder({"message": "Resume text saved successfully"}))
