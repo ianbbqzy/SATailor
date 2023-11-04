@@ -42,6 +42,7 @@ firebase_admin.initialize_app(cred)
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb', region_name='us-west-2', aws_access_key_id=config.AWS_ACCESS_KEY, aws_secret_access_key=config.AWS_SECRET_KEY)
 table = dynamodb.Table('Sentences')
+table = dynamodb.Table('Users')
 
 #Load app
 app = FastAPI()
@@ -173,3 +174,29 @@ async def get_sentences(request: Request, word: str = None, topic: str = None, i
         item['isFavorite'] = item.pop('IsFavorite')
     return JSONResponse(content=jsonable_encoder({"content": items}))
 
+class ResumeRequestBody(BaseModel):
+    resume: str
+
+@app.post('/resume')
+async def save_resume(request: Request, requestBody: ResumeRequestBody):
+    userId = request.state.decoded_token['uid']
+    table.put_item(
+        Item={
+            'UserId': userId,
+            'Resume': requestBody.resume
+        }
+    )
+
+@app.get('/resume')
+async def get_resume(request: Request):
+    userId = request.state.decoded_token['uid']
+    response = table.get_item(
+        Key={
+            'UserId': userId
+        }
+    )
+    # Check if a resume exists for the user
+    if 'Item' in response:
+        return JSONResponse(content=jsonable_encoder({"resume": response['Item']['Resume']}))
+    else:
+        return JSONResponse(content=jsonable_encoder({"resume": "No resume uploaded yet"}))
