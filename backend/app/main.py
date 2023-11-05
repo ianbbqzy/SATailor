@@ -86,7 +86,7 @@ app.add_middleware(
 async def get_suggestion(request: Request, question: str, notes: str):
     try:
         userId = request.state.decoded_token['uid']
-        response = table.get_item(Key={'UserId': userId})
+        response = usersTable.get_item(Key={'UserId': userId})
         resume = response['Item']['Resume']
     except Exception as e:
         logging.error("Error occurred while fetching user's resume data")
