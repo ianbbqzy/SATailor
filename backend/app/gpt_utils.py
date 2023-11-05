@@ -253,16 +253,17 @@ be very encouraging. End on a positive note.
         for message in completion:
             yield message['choices'][0]['delta'].get("content", "")
 
-    def get_suggestion(self, question, notes):
+    def get_suggestion(self, question, notes, resume):
         prompt = f"""
         Prompt: {question} 
         Student's notes: {notes}
+        Student's resume: {resume}
         """  # Updated to handle long format language names
         messages=[
             {"role": "system", "content": """
             You are a kind and insightful college application councelor. Given a college application
             essay prompt and a student's notes for brainstorming, you should provide guidence on which part of
-            a student's notes is relevant to the prompt and get them started on writing a response.
+            a student's notes is relevant to the prompt and get them started on writing a response. Also, consider the student's resume in your suggestions.
             """},
             {"role": "user", "content": prompt}
         ]

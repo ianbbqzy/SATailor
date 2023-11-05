@@ -1,4 +1,5 @@
 import time
+import logging
 from fastapi import FastAPI, Request, HTTPException
 from functools import wraps, lru_cache
 from dotenv import load_dotenv
@@ -10,7 +11,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 import firebase_admin
 from firebase_admin import auth
-from starlette.status import HTTP_403_FORBIDDEN
+from starlette.status import HTTP_403_FORBIDDEN, HTTP_500_INTERNAL_SERVER_ERROR
 import boto3
 from boto3.dynamodb.conditions import Key
 from pydantic import BaseModel
@@ -42,7 +43,7 @@ firebase_admin.initialize_app(cred)
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb', region_name='us-west-2', aws_access_key_id=config.AWS_ACCESS_KEY, aws_secret_access_key=config.AWS_SECRET_KEY)
 table = dynamodb.Table('Sentences')
-table = dynamodb.Table('Users')
+usersTable = dynamodb.Table('Users')
 
 #Load app
 app = FastAPI()
@@ -81,7 +82,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# returns a list of {'word': 'word', 'sentence': 'sentence'}
+@app.get('/suggestion')
+async def get_suggestion(request: Request, question: str, notes: str):
+    try:
+        userId = request.state.decoded_token['uid']
+        response = usersTable.get_item(Key={'UserId': userId})
+        resume = response['Item']['Resume']
+    except Exception as e:
+        logging.error("Error occurred while fetching user's resume data")
+        return JSONResponse(content="Error occurred while processing your request", status_code=HTTP_500_INTERNAL_SERVER_ERROR)
+
+    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).get_suggestion(question, notes, resume)
+    return StreamingResponse(gpt_response, media_type="text/event-stream")
+
+# Rest of the code remains the same
 @app.get('/prompt_vocab')
 def prompt_vocab(request: Request, topic: str, text: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_vocab(text, topic)
@@ -91,11 +105,6 @@ def prompt_vocab(request: Request, topic: str, text: str):
 @app.get('/feedback')
 async def get_feedback(request: Request, question: str, answer: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).get_feedback(question, answer)
-    return StreamingResponse(gpt_response, media_type="text/event-stream")
-
-@app.get('/suggestion')
-async def get_suggestion(request: Request, question: str, notes: str):
-    gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).get_suggestion(question, notes)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
 
 @app.get('/essay_prompts')
@@ -180,7 +189,7 @@ class ResumeRequestBody(BaseModel):
 @app.post('/resume')
 async def save_resume(request: Request, requestBody: ResumeRequestBody):
     userId = request.state.decoded_token['uid']
-    table.put_item(
+    usersTable.put_item(
         Item={
             'UserId': userId,
             'Resume': requestBody.resume
@@ -190,7 +199,7 @@ async def save_resume(request: Request, requestBody: ResumeRequestBody):
 @app.get('/resume')
 async def get_resume(request: Request):
     userId = request.state.decoded_token['uid']
-    response = table.get_item(
+    response = usersTable.get_item(
         Key={
             'UserId': userId
         }
