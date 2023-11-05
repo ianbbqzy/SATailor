@@ -2,6 +2,7 @@ import json
 import openai
 import time
 import re
+import csv
 
 class GPTUtils:
     def __init__(self, openai_api_key):
@@ -284,58 +285,30 @@ def remove_trailing_commas(json_like_str):
 
 
 class EssayPrompt:
-    def __init__(self, prompt, word_count, tips) -> None:
+    def __init__(self, id: int, college: str, prompt: str, word_count: int, tips: str) -> None:
+        self.id = id
+        self.college = college
         self.prompt = prompt
         self.word_count = word_count
         self.tips = tips
 
     def to_dict(self):
         return {
+            "id": self.id,
+            "college": self.college,
             "prompt": self.prompt,
             "word_count": self.word_count,
             "tips": self.tips
         }
 
-essayPrompts = {
-    "Brown": [
-        EssayPrompt(
-            """
-            Brown's Open Curriculum allows students to explore broadly
-            while also diving deeply into their academic pursuits. Tell us
-            about any academic interests that excite you, and how you might
-            use the Open Curriculum to pursue them while also embracing topics
-            with which you are unfamiliar.
-            """,
-        250,
-        "Paste your resume into the notes to get brainstorming!").to_dict(),
-        EssayPrompt(
-            """
-            Students entering Brown often find that making their home on
-            College Hill naturally invites reflection on where they came from.
-            Share how an aspect of your growing up has inspired or challenged
-            you, and what unique contributions this might allow you to make to
-            the Brown community.
-            """,
-        250,
-        "Paste your resume into the notes to get brainstorming!").to_dict(),
-        EssayPrompt(
-            """
-            Brown students care deeply about their work and the world around
-            them. Students find contentment, satisfaction, and meaning in
-            daily interactions and major discoveries. Whether big or small,
-            mundane or spectacular, tell us about something that brings you joy. 
-            """,
-        250,
-        "Paste your resume into the notes to get brainstorming!").to_dict(),
-    ],
-    "Columbia": [
-        EssayPrompt(
-            """List a selection of texts, resources and outlets that have
-            contributed to your intellectual development outside of academic
-            courses, including but not limited to books, journals, websites,
-            podcasts, essays, plays, presentations, videos, museums and other
-            content that you enjoy. (100 words or fewer)
-            """
-        , 100, "Paste your resume into the notes to get brainstorming!").to_dict()
-    ]
-}
+def parse_csv_to_dict(file_path: str) -> dict:
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)  # Skip the header row
+        prompts_dict = {}
+        for row in reader:
+            college, id, prompt, word_count, tips = row
+            if college not in prompts_dict:
+                prompts_dict[college] = []
+            prompts_dict[college].append(EssayPrompt(id, college, prompt, word_count, tips).to_dict())
+        return prompts_dict
