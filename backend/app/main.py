@@ -19,7 +19,7 @@ from fastapi.responses import StreamingResponse
 import sys
 
 import app.config as config
-import app.gpt_utils as gpt_utils
+from app.gpt_utils import parse_csv_to_dict
 
 class Sentence(BaseModel):
     userId: str
@@ -95,7 +95,6 @@ async def get_suggestion(request: Request, question: str, notes: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).get_suggestion(question, notes, resume)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
 
-# Rest of the code remains the same
 @app.get('/prompt_vocab')
 def prompt_vocab(request: Request, topic: str, text: str):
     gpt_response = gpt_utils.GPTUtils(config.OPENAI_KEY).call_gpt_vocab(text, topic)
@@ -109,7 +108,8 @@ async def get_feedback(request: Request, question: str, answer: str):
 
 @app.get('/essay_prompts')
 async def get_essay_prompts(request: Request):
-    return JSONResponse(content=jsonable_encoder({"content": gpt_utils.essayPrompts}))
+    prompts_dict = parse_csv_to_dict('./app/essay_prompts.csv')
+    return JSONResponse(content=jsonable_encoder({"content": prompts_dict}))
 
 @app.get('/formatted_feedback')
 async def get_formatted_feedback(request: Request, question: str, answer: str):
