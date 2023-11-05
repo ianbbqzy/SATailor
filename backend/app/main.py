@@ -108,7 +108,7 @@ async def get_feedback(request: Request, question: str, answer: str):
 
 @app.get('/essay_prompts')
 async def get_essay_prompts(request: Request):
-    prompts_dict = parse_csv_to_dict('path_to_csv_file')  # Replace with the actual path to the CSV file
+    prompts_dict = parse_csv_to_dict('./app/essay_prompts.csv')
     return JSONResponse(content=jsonable_encoder({"content": prompts_dict}))
 
 @app.get('/formatted_feedback')
