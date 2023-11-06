@@ -29,6 +29,11 @@ class Sentence(BaseModel):
     sentence: str
     isFavorite: bool
 
+class EssayResponseRequestBody(BaseModel):
+    college: str
+    promptId: str
+    response: str
+
 sys.path.append("..")
 sys.path.append(".")
 
@@ -44,6 +49,8 @@ firebase_admin.initialize_app(cred)
 dynamodb = boto3.resource('dynamodb', region_name='us-west-2', aws_access_key_id=config.AWS_ACCESS_KEY, aws_secret_access_key=config.AWS_SECRET_KEY)
 table = dynamodb.Table('Sentences')
 usersTable = dynamodb.Table('Users')
+essayResponsesTable = dynamodb.Table('EssayResponses')
+essayResponseVersionsTable = dynamodb.Table('EssayResponseVersions')
 
 #Load app
 app = FastAPI()
@@ -209,3 +216,38 @@ async def get_resume(request: Request):
         return JSONResponse(content=jsonable_encoder({"resume": response['Item']['Resume']}))
     else:
         return JSONResponse(content=jsonable_encoder({"resume": "No resume uploaded yet"}))
+
+@app.post('/essay_responses')
+async def save_essay_response(request: Request, requestBody: EssayResponseRequestBody):
+    userId = request.state.decoded_token['uid']
+    promptId = f"{requestBody.college}{requestBody.promptId}"
+    timestamp = dt.now().isoformat()
+    essayResponsesTable.put_item(
+        Item={
+            'UserId': userId,
+            'PromptId': promptId,
+            'Response': requestBody.response,
+            'Timestamp': timestamp
+        }
+    )
+    essayResponseVersionsTable.put_item(
+        Item={
+            'PromptId': promptId,
+            'Timestamp': timestamp,
+            'Response': requestBody.response
+        }
+    )
+
+@app.get('/essay_responses/{college}')
+async def get_essay_responses(request: Request, college: str):
+    userId = request.state.decoded_token['uid']
+    response = essayResponsesTable.query(
+        KeyConditionExpression=Key('UserId').eq(userId) & Key('PromptId').begins_with(college)
+    )
+    items = response['Items']
+    for item in items:
+        item['userId'] = item.pop('UserId')
+        item['promptId'] = item.pop('PromptId')
+        item['response'] = item.pop('Response')
+        item['timestamp'] = item.pop('Timestamp')
+    return JSONResponse(content=jsonable_encoder({"content": items}))
