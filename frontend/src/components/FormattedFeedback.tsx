@@ -140,6 +140,29 @@ const QuestionComponent = ({ question }: { question: Question }) => {
         setHighlight(excerpt);
     };
 
+    const handleSave = async () => {
+        try {
+            const token = await auth.currentUser?.getIdToken(true);
+            const response = await fetch(`${process.env.BACKEND_URL}/essay_responses`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    college: selectedCollege,
+                    promptId: question.id,
+                    response: answer.current
+                })
+            });
+            if (!response.ok) {
+                throw Error(`HTTP error! status: ${response.status}`);
+            }
+            alert('Essay saved successfully!');
+        } catch (error: any) {
+            alert(`An error occurred: ${error.message}`);
+        }
+    };
+
     return (
         <Grid item xs={12} key={question.id}>
             <Paper elevation={3} style={{ padding: '20px', marginBottom: '20px' }}>
@@ -153,31 +176,12 @@ const QuestionComponent = ({ question }: { question: Question }) => {
                             <Tab label="Response" value="response" />
                         </Tabs>
                         <TabPanel value={promptTab} index="response">
-                            {/* <Marker mark={highlight}>
-                                <Typography 
-                                    contentEditable={true} 
-                                    suppressContentEditableWarning={true} 
-                                    gutterBottom 
-                                    variant="h5" 
-                                    component="h2"
-                                    onInput={(e: React.FormEvent<HTMLHeadingElement>) => handleAnswerChange(e.currentTarget.textContent || '')}
-                                >
-                                    {answer}
-                                </Typography>
-                            </Marker> */}
-                            {/* <Marker mark={"highlight me"}>
-                                <TextField
-                                    multiline
-                                    minRows={10}
-                                    variant="outlined"
-                                    fullWidth
-                                    value={answer}
-                                    onChange={handleAnswerChange}
-                                />
-                            </Marker> */}
                             <Tiptap highlight={highlight} onChange={handleAnswerChange}/>
                             <Button variant="contained" color="primary" onClick={() => handleFeedback()} style={{ marginTop: '10px' }}>
                                 Get Feedback
+                            </Button>
+                            <Button variant="contained" color="primary" onClick={handleSave} style={{ marginTop: '10px' }}>
+                                Save
                             </Button>
                         </TabPanel>
                         <TabPanel value={promptTab} index="notes">
@@ -237,7 +241,6 @@ const DetailedFeedback = ({ feedback, highlightExcerpt }: { feedback: Feedback, 
             {/* List the excerpt feedback below. */}
             {feedback.excerpt_feedbacks.map((excerpt_feedback, index) => (
                 <div key={index} 
-                    //  onMouseOver={() => highlightExcerpt(excerpt_feedback.excerpt)} 
                      style={{border: '1px solid #ccc', borderRadius: '5px', padding: '10px', boxShadow: '0px 0px 5px rgba(0,0,0,0.1)', transition: 'box-shadow 0.3s ease'}}
                      onMouseEnter={(e) => { 
                          e.currentTarget.style.boxShadow = '0px 0px 10px rgba(0,0,0,0.3)';
@@ -330,6 +333,33 @@ const FeedbackPage = () => {
     
     }, []);
 
+    useEffect(() => {
+        const fetchEssayResponses = async () => {
+            try {
+                const token = await auth.currentUser?.getIdToken(true);
+                if (!token) {
+                    return;
+                }
+                const response = await fetch(`${process.env.BACKEND_URL}/essay_responses/${selectedCollege}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                // TODO: Use the fetched responses to populate the corresponding text fields in the user interface.
+            } catch (error: any) {
+                alert(`An error occurred: ${error.message}`);
+            }
+        };
+        if (selectedCollege) {
+            fetchEssayResponses();
+        }
+    }, [selectedCollege]);
+
     const handleCollegeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
         setSelectedCollege(event.target.value as string);
     };
@@ -358,4 +388,3 @@ const FeedbackPage = () => {
 };
 
 export default FeedbackPage;
-
