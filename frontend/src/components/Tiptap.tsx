@@ -24,13 +24,13 @@ const Tiptap = ({ highlight, onChange }: { highlight: string, onChange: (modifie
       if (editor && highlight !== highlightRef.current) {
 
         if (highlight != '') {
-          editor.chain().focus().setTextSelection({ from: 0, to: editor.getText().length }).unsetHighlight().run();
+          editor.chain().setTextSelection({ from: 0, to: editor.getText().length }).unsetHighlight().run();
         }
 
         const highlightIndex = editor.getText().indexOf(highlight);
   
         if (highlightIndex !== -1) {
-          editor.chain().focus().setTextSelection({ from: highlightIndex, to: highlightIndex + highlight.length }).toggleHighlight({ color: '#b197fc' }).run();
+          editor.chain().setTextSelection({ from: highlightIndex, to: highlightIndex + highlight.length }).toggleHighlight({ color: '#b197fc' }).run();
         }
 
         highlightRef.current = highlight;

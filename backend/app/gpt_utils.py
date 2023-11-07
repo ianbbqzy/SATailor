@@ -134,8 +134,12 @@ class GPTUtils:
             print(function_args['results'])
             return list(map(lambda x: {'word': x[0], 'sentence': x[1], 'topic': topic, 'sentenceId': str(time.time()).replace('.', '')}, function_args["results"]))
 
-    def call_feedback_with_functions(self, text, topic):
-        prompt = f'Create sentences for practicing SAT vocabulary words "{text}" on the topic: {topic}'
+    def call_feedback_with_functions(self, question, answer):
+        prompt = f"""
+        Prompt: {question} 
+        Student Response: {answer}
+        """ 
+        # Updated to handle long format language names        
         messages=[
             {"role": "system", "content": """
             You are a friendly and helpful tutor helping students write their college application essay. 
@@ -154,7 +158,9 @@ Your job is to give them first a general review of their essay based on the foll
 - The structure establishes a relationship between/among ideas/events and transitions help to clarify the order of events.
 - Exhibits EXCELLENT CONTROL of grammatical conventions appropriate to the writing task: standard usage including agreement, tense and case; and mechanics
 
-Restate the exact sentences line by line of the college essay in bold for improvement and give the feedback on the part. Give 2-3 suggestions of how they could improve that part of the essay. DO NOT JUST SAY, “introduction” , “transitions”, but rather quote SPECIFIC LINES of the TEXT.
+Restate the exact sentences line by line of the student's response in bold for improvement and give the feedback on the part. Give 2-3 suggestions of how they could improve that part of the essay. DO NOT JUST SAY, “introduction” , “transitions”, but rather quote SPECIFIC LINES of the TEXT.
+
+Do not confuse the essay prompt with the student response and you must not restate the sentences from the essay prompt. Do not hallucinate sentences that do not appear in the student's response.
 
 Limit to highlighting only 5-6 specific parts per feedback round.
 
@@ -237,6 +243,8 @@ Your job is to give them first a general review of their essay based on the foll
 - Exhibits EXCELLENT CONTROL of grammatical conventions appropriate to the writing task: standard usage including agreement, tense and case; and mechanics
 
 Restate the exact sentences line by line of the college essay in bold for improvement and give the feedback on the part. Give 2-3 suggestions of how they could improve that part of the essay. DO NOT JUST SAY, “introduction” , “transitions”, but rather quote SPECIFIC LINES of the TEXT.
+
+Do not confuse the essay prompt with the student response and you must not restate the sentences from the essay prompt. Do not hallucinate sentences that do not appear in the student's response.
 
 Limit to highlighting only 5-6 specific parts per feedback round.
 
