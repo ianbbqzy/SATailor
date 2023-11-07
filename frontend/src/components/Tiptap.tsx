@@ -7,11 +7,11 @@ import Text from '@tiptap/extension-text'
 import React, { useState, ChangeEvent, useEffect, useRef } from 'react';
 import { debounce } from 'lodash';
 
-const Tiptap = ({ highlight, onChange }: { highlight: string, onChange: (modifiedAnswer: string) => void}) => {
+const Tiptap = ({ content, highlight, onChange }: { content: string, highlight: string, onChange: (modifiedAnswer: string) => void}) => {
   const debouncedOnChange = debounce(onChange, 1000);
   const editor = useEditor({
         extensions: [Document, Paragraph, Text, Highlight.configure({ multicolor: true })],
-        content: '',
+        content: content,
         onUpdate: ({ editor }) => {     
           debouncedOnChange(editor.getText())
         },

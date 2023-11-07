@@ -112,11 +112,18 @@ def prompt_vocab(request: Request, topic: str, text: str):
 async def get_feedback(request: Request, question: str, answer: str):
     gpt_response = GPTUtils(config.OPENAI_KEY).get_feedback(question, answer)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
-
-@app.get('/essay_prompts')
-async def get_essay_prompts(request: Request):
+@app.get('/colleges')
+async def get_colleges(request: Request):
     prompts_dict = parse_csv_to_dict('./app/essay_prompts.csv')
-    return JSONResponse(content=jsonable_encoder({"content": prompts_dict}))
+    colleges_list = list(prompts_dict.keys())
+    return JSONResponse(content=jsonable_encoder({"content": colleges_list}))
+
+@app.get('/essay_prompts/{college}')
+async def get_essay_prompts(request: Request, college: str):
+    prompts_dict = parse_csv_to_dict('./app/essay_prompts.csv')
+    college_prompts = prompts_dict.get(college, {})
+    return JSONResponse(content=jsonable_encoder({"content": college_prompts}))
+
 
 @app.get('/formatted_feedback')
 async def get_formatted_feedback(request: Request, question: str, answer: str):
@@ -221,6 +228,7 @@ async def get_resume(request: Request):
 async def save_essay_response(request: Request, requestBody: EssayResponseRequestBody):
     userId = request.state.decoded_token['uid']
     promptId = f"{requestBody.college}{requestBody.promptId}"
+    responseId = f"{userId}{promptId}"
     timestamp = dt.now().isoformat()
     essayResponsesTable.put_item(
         Item={
@@ -232,7 +240,7 @@ async def save_essay_response(request: Request, requestBody: EssayResponseReques
     )
     essayResponseVersionsTable.put_item(
         Item={
-            'PromptId': promptId,
+            'ResponseId': responseId,
             'Timestamp': timestamp,
             'Response': requestBody.response
         }
@@ -247,7 +255,8 @@ async def get_essay_responses(request: Request, college: str):
     items = response['Items']
     for item in items:
         item['userId'] = item.pop('UserId')
-        item['promptId'] = item.pop('PromptId')
+        item['college'] = college
+        item['promptId'] = int(item.pop('PromptId')[len(college):])
         item['response'] = item.pop('Response')
         item['timestamp'] = item.pop('Timestamp')
     return JSONResponse(content=jsonable_encoder({"content": items}))

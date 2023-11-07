@@ -1,10 +1,8 @@
-import React, { useState, ChangeEvent, useEffect, useRef } from 'react';
+import React, { useState, ChangeEvent, useEffect, useRef, useContext } from 'react';
 import { Button, TextField, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem, Tabs, Tab, Box } from '@material-ui/core';
 import { auth } from '../services/auth';
-import { Marker } from "react-mark.js";
-import { User } from 'firebase/auth';
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Tiptap from './Tiptap';
+import { UserContext } from '../context/user';
 
 interface Question {
     id: number;
@@ -20,8 +18,7 @@ interface Feedback {
     conclusion: string;
 }
 
-const QuestionComponent = ({ question }: { question: Question }) => {
-    // const [answer, setAnswer] = useState<string>(question.answer);
+const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: string, question: Question }) => {
     const [notes, setNotes] = useState<string>("");
     const [feedback, setFeedback] = useState<Feedback>({
         excerpt_feedbacks: [],
@@ -30,15 +27,14 @@ const QuestionComponent = ({ question }: { question: Question }) => {
     });
     const [suggestion, setSuggestion] = useState<string | undefined>("No notes submitted yet.");
     const isAnswerModified = useRef<boolean>(false);
-    const answer = useRef<string>('');
     const [isNotesModified, setIsNotesModified] = useState<boolean>(false);
     const [guideTab, setGuideTab] = useState<string>('tips');
     const [promptTab, setPromptTab] = useState<string>('notes');
     const [highlight, setHighlight] = useState<string>('');
+    const answer = useRef<string>(question.answer);
 
     const handleAnswerChange = (modifiedAnswer: string) => {
         answer.current = modifiedAnswer;
-        // setIsAnswerModified(true);
         isAnswerModified.current = true;
     };
 
@@ -146,7 +142,8 @@ const QuestionComponent = ({ question }: { question: Question }) => {
             const response = await fetch(`${process.env.BACKEND_URL}/essay_responses`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'  // Add this line
                 },
                 body: JSON.stringify({
                     college: selectedCollege,
@@ -176,7 +173,7 @@ const QuestionComponent = ({ question }: { question: Question }) => {
                             <Tab label="Response" value="response" />
                         </Tabs>
                         <TabPanel value={promptTab} index="response">
-                            <Tiptap highlight={highlight} onChange={handleAnswerChange}/>
+                            <Tiptap highlight={highlight} onChange={handleAnswerChange} content={answer.current}/>
                             <Button variant="contained" color="primary" onClick={() => handleFeedback()} style={{ marginTop: '10px' }}>
                                 Get Feedback
                             </Button>
@@ -294,18 +291,29 @@ interface TabPanelProps {
     );
   }
 
+interface UserResponse {
+    userId: string,
+    college: string,
+    promptId: number,
+    response: string,
+    timestamp: string
+}
+
 const FeedbackPage = () => {
-    const [questions, setQuestions] = useState<{ [key: string]: Question[] }>({});
+    const [questions, setQuestions] = useState<Question[]>([]);
     const [selectedCollege, setSelectedCollege] = useState<string>('');
+    const [colleges, setColleges] = useState<string[]>([]);
+
+    const user = useContext(UserContext);
 
     useEffect(() => {
-        const fetchEssayPrompts = async () => {
+        const fetchColleges = async () => {
             try {
-                const token = await auth.currentUser?.getIdToken(true);
+                const token = await user?.getIdToken(true);
                 if (!token) {
-                    return;
+                    return
                 }
-                const response = await fetch(`${process.env.BACKEND_URL}/essay_prompts`, {
+                const response = await fetch(`${process.env.BACKEND_URL}/colleges`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -315,26 +323,40 @@ const FeedbackPage = () => {
                     throw Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                setQuestions(data.content);
+                setColleges(data.content);
             } catch (error: any) {
                 alert(`An error occurred: ${error.message}`);
             }
         };
 
-        const auth = getAuth();
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                fetchEssayPrompts();
-            }        
-        });
-    
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
-    
-    }, []);
+        fetchColleges();
+    }, [user])
 
     useEffect(() => {
-        const fetchEssayResponses = async () => {
+        const fetchPrompts = async () => {
+            let prompts: { [key: number]: Question } = {};
+            try {
+                const token = await user?.getIdToken(true);
+                if (!token || !selectedCollege) {
+                    return
+                }
+                const response = await fetch(`${process.env.BACKEND_URL}/essay_prompts/${selectedCollege}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                data.content.forEach((question: Question) => {
+                    prompts[question.id] = question;
+                });
+            } catch (error: any) {
+                alert(`An error occurred: ${error.message}`);
+            }
+
             try {
                 const token = await auth.currentUser?.getIdToken(true);
                 if (!token) {
@@ -350,14 +372,18 @@ const FeedbackPage = () => {
                     throw Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                // TODO: Use the fetched responses to populate the corresponding text fields in the user interface.
+                data.content.forEach((response: UserResponse) => {
+                    prompts[response.promptId].answer = response.response
+                });
+                console.log(prompts)
+                setQuestions(Object.values(prompts));
             } catch (error: any) {
                 alert(`An error occurred: ${error.message}`);
             }
         };
-        if (selectedCollege) {
-            fetchEssayResponses();
-        }
+
+        fetchPrompts();
+    
     }, [selectedCollege]);
 
     const handleCollegeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
@@ -375,13 +401,13 @@ const FeedbackPage = () => {
                     onChange={handleCollegeChange}
                     label="College"
                 >
-                    {questions && Object.keys(questions).map((college) => (
+                    {colleges && colleges.map((college) => (
                         <MenuItem key={college} value={college}>{college}</MenuItem>
                     ))}
                 </Select>
             </FormControl>
-            {questions[selectedCollege]?.map(q => (
-                <QuestionComponent question={q} />
+            {questions?.map(q => (
+                <QuestionComponent selectedCollege={selectedCollege} question={q} />
             ))}
         </Grid>
     );
