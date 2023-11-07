@@ -29,6 +29,11 @@ class Sentence(BaseModel):
     sentence: str
     isFavorite: bool
 
+class EssayResponseRequestBody(BaseModel):
+    college: str
+    promptId: str
+    response: str
+
 sys.path.append("..")
 sys.path.append(".")
 
@@ -44,6 +49,8 @@ firebase_admin.initialize_app(cred)
 dynamodb = boto3.resource('dynamodb', region_name='us-west-2', aws_access_key_id=config.AWS_ACCESS_KEY, aws_secret_access_key=config.AWS_SECRET_KEY)
 table = dynamodb.Table('Sentences')
 usersTable = dynamodb.Table('Users')
+essayResponsesTable = dynamodb.Table('EssayResponses')
+essayResponseVersionsTable = dynamodb.Table('EssayResponseVersions')
 
 #Load app
 app = FastAPI()
@@ -105,11 +112,18 @@ def prompt_vocab(request: Request, topic: str, text: str):
 async def get_feedback(request: Request, question: str, answer: str):
     gpt_response = GPTUtils(config.OPENAI_KEY).get_feedback(question, answer)
     return StreamingResponse(gpt_response, media_type="text/event-stream")
-
-@app.get('/essay_prompts')
-async def get_essay_prompts(request: Request):
+@app.get('/colleges')
+async def get_colleges(request: Request):
     prompts_dict = parse_csv_to_dict('./app/essay_prompts.csv')
-    return JSONResponse(content=jsonable_encoder({"content": prompts_dict}))
+    colleges_list = list(prompts_dict.keys())
+    return JSONResponse(content=jsonable_encoder({"content": colleges_list}))
+
+@app.get('/essay_prompts/{college}')
+async def get_essay_prompts(request: Request, college: str):
+    prompts_dict = parse_csv_to_dict('./app/essay_prompts.csv')
+    college_prompts = prompts_dict.get(college, {})
+    return JSONResponse(content=jsonable_encoder({"content": college_prompts}))
+
 
 @app.get('/formatted_feedback')
 async def get_formatted_feedback(request: Request, question: str, answer: str):
@@ -209,3 +223,40 @@ async def get_resume(request: Request):
         return JSONResponse(content=jsonable_encoder({"resume": response['Item']['Resume']}))
     else:
         return JSONResponse(content=jsonable_encoder({"resume": "No resume uploaded yet"}))
+
+@app.post('/essay_responses')
+async def save_essay_response(request: Request, requestBody: EssayResponseRequestBody):
+    userId = request.state.decoded_token['uid']
+    promptId = f"{requestBody.college}{requestBody.promptId}"
+    responseId = f"{userId}{promptId}"
+    timestamp = dt.now().isoformat()
+    essayResponsesTable.put_item(
+        Item={
+            'UserId': userId,
+            'PromptId': promptId,
+            'Response': requestBody.response,
+            'Timestamp': timestamp
+        }
+    )
+    essayResponseVersionsTable.put_item(
+        Item={
+            'ResponseId': responseId,
+            'Timestamp': timestamp,
+            'Response': requestBody.response
+        }
+    )
+
+@app.get('/essay_responses/{college}')
+async def get_essay_responses(request: Request, college: str):
+    userId = request.state.decoded_token['uid']
+    response = essayResponsesTable.query(
+        KeyConditionExpression=Key('UserId').eq(userId) & Key('PromptId').begins_with(college)
+    )
+    items = response['Items']
+    for item in items:
+        item['userId'] = item.pop('UserId')
+        item['college'] = college
+        item['promptId'] = int(item.pop('PromptId')[len(college):])
+        item['response'] = item.pop('Response')
+        item['timestamp'] = item.pop('Timestamp')
+    return JSONResponse(content=jsonable_encoder({"content": items}))
