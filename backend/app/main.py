@@ -228,7 +228,6 @@ async def get_resume(request: Request):
 async def save_essay_response(request: Request, requestBody: EssayResponseRequestBody):
     userId = request.state.decoded_token['uid']
     promptId = f"{requestBody.college}{requestBody.promptId}"
-    responseId = f"{userId}{promptId}"
     timestamp = dt.now().isoformat()
     essayResponsesTable.put_item(
         Item={
@@ -240,11 +239,26 @@ async def save_essay_response(request: Request, requestBody: EssayResponseReques
     )
     essayResponseVersionsTable.put_item(
         Item={
-            'ResponseId': responseId,
+            'ResponseId': f"{userId}{promptId}",
             'Timestamp': timestamp,
             'Response': requestBody.response
         }
     )
+
+@app.get('/essay_response_versions/{college}/{promptId}')
+async def get_essay_response_versions(request: Request, college: str, promptId: str):
+    userId = request.state.decoded_token['uid']
+    responseId = f"{userId}{college}{promptId}"
+    response = essayResponseVersionsTable.query(
+        KeyConditionExpression=Key('ResponseId').eq(responseId),
+        ScanIndexForward=False
+    )
+    items = response['Items']
+    for item in items:
+        item['responseId'] = item.pop('ResponseId')
+        item['timestamp'] = item.pop('Timestamp')
+        item['response'] = item.pop('Response')
+    return JSONResponse(content=jsonable_encoder({"content": items}))
 
 @app.get('/essay_responses/{college}')
 async def get_essay_responses(request: Request, college: str):
