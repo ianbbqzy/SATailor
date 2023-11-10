@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent, useEffect, useRef, useContext } from 'react';
+import React, { useState, ChangeEvent, useEffect, useRef, useContext, useMemo } from 'react';
 import { Button, TextField, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem, Tabs, Tab, Box } from '@material-ui/core';
 import { auth } from '../services/auth';
 import Tiptap from './Tiptap';
@@ -33,7 +33,8 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
     const [highlight, setHighlight] = useState<string>('');
     const answer = useRef<string>(question.answer);
     const [versions, setVersions] = useState<{timestamp: string, response: string}[]>([]);
-    const [selectedVersion, setSelectedVersion] = useState<string>("");
+    const [selectedVersion, setSelectedVersion] = useState<{timestamp: string, response: string} | null>(null);
+    const [selectedTimestamp, setSelectedTimestamp] = useState<string>('');
 
     const handleAnswerChange = (modifiedAnswer: string) => {
         answer.current = modifiedAnswer;
@@ -149,8 +150,12 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                     throw Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                setVersions(data.content);
-            } catch (error: any) {
+                const fetchedVersions = data.content as {timestamp: string, response: string}[]
+                setVersions(fetchedVersions);
+                if (fetchedVersions.length > 0) {
+                    setSelectedVersion(fetchedVersions[0])
+                    setSelectedTimestamp(fetchedVersions[0].timestamp)
+                }            } catch (error: any) {
                 alert(`An error occurred: ${error.message}`);
             }
         };
@@ -189,7 +194,12 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                         throw Error(`HTTP error! status: ${response.status}`);
                     }
                     const data = await response.json();
-                    setVersions(data.content);
+                    const fetchedVersions = data.content as {timestamp: string, response: string}[]
+                    setVersions(fetchedVersions);
+                    if (fetchedVersions.length > 0) {
+                        setSelectedVersion(fetchedVersions[0])
+                        setSelectedTimestamp(fetchedVersions[0].timestamp)
+                    }
                 } catch (error: any) {
                     alert(`An error occurred: ${error.message}`);
                 }
@@ -213,7 +223,7 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                             <Tab label="Response" value="response" />
                         </Tabs>
                         <TabPanel value={promptTab} index="response">
-                            <Tiptap highlight={highlight} onChange={handleAnswerChange} content={selectedVersion || answer.current}/>
+                            <Tiptap highlight={highlight} onChange={handleAnswerChange} content={selectedVersion ? selectedVersion.response : ''}/>
                             <Button variant="contained" color="primary" onClick={() => handleFeedback()} style={{ marginTop: '10px' }}>
                                 Get Feedback
                             </Button>
@@ -225,14 +235,19 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                                 <Select
                                     labelId="version-select-label"
                                     id="version-select"
-                                    value={selectedVersion}
+                                    // Can directly use selectedVersion.timestamp. it wouldn't update for some reasons
+                                    value={selectedTimestamp}
                                     onChange={(event: React.ChangeEvent<{ value: unknown }>) => {
-                                        setSelectedVersion(event.target.value as string);
+                                        const selectedTimestamp = event.target.value as string;
+                                        const selectedVersion = versions.find(version => version.timestamp === selectedTimestamp);
+                                        setSelectedVersion(selectedVersion || null);
+                                        isAnswerModified.current = true;
                                     }}
                                     label="Version"
+                                    style={{ minWidth: 275 }}
                                 >
                                     {versions.map((version, index) => (
-                                        <MenuItem key={index} value={version.response}>{version.timestamp}</MenuItem>
+                                        <MenuItem key={version.timestamp} value={version.timestamp}>{version.timestamp}</MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>

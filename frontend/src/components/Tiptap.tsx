@@ -37,6 +37,13 @@ const Tiptap = ({ content, highlight, onChange }: { content: string, highlight: 
       }
     }, [editor, highlight]);
 
+    // Add this effect
+    useEffect(() => {
+      if (editor) {
+        editor.commands.setContent(content);
+      }
+    }, [content, editor]);
+
 
     if (!editor) {
       return null
