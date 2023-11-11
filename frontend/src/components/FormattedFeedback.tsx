@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent, useEffect, useRef, useContext } from 'react';
+import React, { useState, ChangeEvent, useEffect, useRef, useContext, useMemo } from 'react';
 import { Button, TextField, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem, Tabs, Tab, Box } from '@material-ui/core';
 import { auth } from '../services/auth';
 import Tiptap from './Tiptap';
@@ -32,6 +32,9 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
     const [promptTab, setPromptTab] = useState<string>('notes');
     const [highlight, setHighlight] = useState<string>('');
     const answer = useRef<string>(question.answer);
+    const [versions, setVersions] = useState<{timestamp: string, response: string}[]>([]);
+    const [selectedVersion, setSelectedVersion] = useState<{timestamp: string, response: string} | null>(null);
+    const [selectedTimestamp, setSelectedTimestamp] = useState<string>('');
 
     const handleAnswerChange = (modifiedAnswer: string) => {
         answer.current = modifiedAnswer;
@@ -48,7 +51,6 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
             const token = await auth.currentUser?.getIdToken(true);
             const params = new URLSearchParams({ question, answer });
             
-            // const response = await fetch(`http://seerlight-dev4.us-east-2.elasticbeanstalk.com/feedback?${params.toString()}`, {
             const response = await fetch(`${process.env.BACKEND_URL}/formatted_feedback?${params.toString()}`, {
                 method: 'GET',
                 headers: {
@@ -70,7 +72,6 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
             const token = await auth.currentUser?.getIdToken(true);
             const params = new URLSearchParams({ question, notes });
             
-            // const response = await fetch(`http://seerlight-dev4.us-east-2.elasticbeanstalk.com/feedback?${params.toString()}`, {
             const response = await fetch(`${process.env.BACKEND_URL}/suggestion?${params.toString()}`, {
                 method: 'GET',
                 headers: {
@@ -132,9 +133,34 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
     };
 
     const highlightExcerpt = (excerpt: string) => {
-        // const highlightedAnswer = answer.replace(excerpt, `<mark>${excerpt}</mark>`);
         setHighlight(excerpt);
     };
+
+    useEffect(() => {
+        const fetchVersions = async () => {
+            try {
+                const token = await auth.currentUser?.getIdToken(true);
+                const response = await fetch(`${process.env.BACKEND_URL}/essay_response_versions/${selectedCollege}/${question.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                const fetchedVersions = data.content as {timestamp: string, response: string}[]
+                setVersions(fetchedVersions);
+                if (fetchedVersions.length > 0) {
+                    setSelectedVersion(fetchedVersions[0])
+                    setSelectedTimestamp(fetchedVersions[0].timestamp)
+                }            } catch (error: any) {
+                alert(`An error occurred: ${error.message}`);
+            }
+        };
+        fetchVersions();
+    }, [question]);
 
     const handleSave = async () => {
         try {
@@ -143,7 +169,7 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'  // Add this line
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     college: selectedCollege,
@@ -155,6 +181,30 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                 throw Error(`HTTP error! status: ${response.status}`);
             }
             alert('Essay saved successfully!');
+            const fetchVersions = async () => {
+                try {
+                    const token = await auth.currentUser?.getIdToken(true);
+                    const response = await fetch(`${process.env.BACKEND_URL}/essay_response_versions/${selectedCollege}/${question.id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    if (!response.ok) {
+                        throw Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    const fetchedVersions = data.content as {timestamp: string, response: string}[]
+                    setVersions(fetchedVersions);
+                    if (fetchedVersions.length > 0) {
+                        setSelectedVersion(fetchedVersions[0])
+                        setSelectedTimestamp(fetchedVersions[0].timestamp)
+                    }
+                } catch (error: any) {
+                    alert(`An error occurred: ${error.message}`);
+                }
+            };
+            fetchVersions();
         } catch (error: any) {
             alert(`An error occurred: ${error.message}`);
         }
@@ -173,13 +223,34 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                             <Tab label="Response" value="response" />
                         </Tabs>
                         <TabPanel value={promptTab} index="response">
-                            <Tiptap highlight={highlight} onChange={handleAnswerChange} content={answer.current}/>
+                            <Tiptap highlight={highlight} onChange={handleAnswerChange} content={selectedVersion ? selectedVersion.response : ''}/>
                             <Button variant="contained" color="primary" onClick={() => handleFeedback()} style={{ marginTop: '10px' }}>
                                 Get Feedback
                             </Button>
                             <Button variant="contained" color="primary" onClick={handleSave} style={{ marginTop: '10px' }}>
                                 Save
                             </Button>
+                            <FormControl variant="outlined" style={{ marginTop: '10px' }}>
+                                <InputLabel id="version-select-label">Version</InputLabel>
+                                <Select
+                                    labelId="version-select-label"
+                                    id="version-select"
+                                    // Can directly use selectedVersion.timestamp. it wouldn't update for some reasons
+                                    value={selectedTimestamp}
+                                    onChange={(event: React.ChangeEvent<{ value: unknown }>) => {
+                                        const selectedTimestamp = event.target.value as string;
+                                        const selectedVersion = versions.find(version => version.timestamp === selectedTimestamp);
+                                        setSelectedVersion(selectedVersion || null);
+                                        isAnswerModified.current = true;
+                                    }}
+                                    label="Version"
+                                    style={{ minWidth: 275 }}
+                                >
+                                    {versions.map((version, index) => (
+                                        <MenuItem key={version.timestamp} value={version.timestamp}>{version.timestamp}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                         </TabPanel>
                         <TabPanel value={promptTab} index="notes">
                             <TextField
@@ -235,7 +306,6 @@ const DetailedFeedback = ({ feedback, highlightExcerpt }: { feedback: Feedback, 
             >
                 {feedback.general_overview || ''}
             </Typography>
-            {/* List the excerpt feedback below. */}
             {feedback.excerpt_feedbacks.map((excerpt_feedback, index) => (
                 <div key={index} 
                      style={{border: '1px solid #ccc', borderRadius: '5px', padding: '10px', boxShadow: '0px 0px 5px rgba(0,0,0,0.1)', transition: 'box-shadow 0.3s ease'}}
