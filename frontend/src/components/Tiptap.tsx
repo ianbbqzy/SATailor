@@ -7,16 +7,16 @@ import Text from '@tiptap/extension-text'
 import React, { useState, ChangeEvent, useEffect, useRef } from 'react';
 import { debounce } from 'lodash';
 
-const Tiptap = ({ content, highlight, onChange }: { content: string, highlight: string, onChange: (modifiedAnswer: string) => void}) => {
+const Tiptap = ({ content, highlight, onChange, onContentChange, onSave }: { content: string, highlight: string, onChange: (modifiedAnswer: string) => void, onContentChange: () => void, onSave: () => void}) => {
   const debouncedOnChange = debounce(onChange, 1000);
   const editor = useEditor({
         extensions: [Document, Paragraph, Text, Highlight.configure({ multicolor: true })],
         content: content,
         onUpdate: ({ editor }) => {     
           debouncedOnChange(editor.getText())
+          onContentChange();
         },
     })
-
 
     const highlightRef = useRef(highlight);
 
@@ -37,13 +37,12 @@ const Tiptap = ({ content, highlight, onChange }: { content: string, highlight: 
       }
     }, [editor, highlight]);
 
-    // Add this effect
     useEffect(() => {
       if (editor) {
         editor.commands.setContent(content);
+        onSave();
       }
     }, [content, editor]);
-
 
     if (!editor) {
       return null
