@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, useEffect, useRef, useContext, useMemo } from 'react';
-import { Button, TextField, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem, Tabs, Tab, Box } from '@material-ui/core';
+import { Button, TextField, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem, Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@material-ui/core';
 import { auth } from '../services/auth';
 import Tiptap from './Tiptap';
 import { UserContext } from '../context/user';
@@ -18,7 +18,7 @@ interface Feedback {
     conclusion: string;
 }
 
-const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: string, question: Question }) => {
+const QuestionComponent = ({ selectedCollege, question, onChange }: { selectedCollege: string, question: Question, onChange: (isModifiedSinceSave: boolean) => void }) => {
     const [notes, setNotes] = useState<string>("");
     const [feedback, setFeedback] = useState<Feedback>({
         excerpt_feedbacks: [],
@@ -27,6 +27,8 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
     });
     const [suggestion, setSuggestion] = useState<string | undefined>("No notes submitted yet.");
     const isAnswerModified = useRef<boolean>(false);
+    const [isAnswerModifiedSinceSave, setIsAnswerModifiedSinceSave] = useState<boolean>(false);
+
     const [isNotesModified, setIsNotesModified] = useState<boolean>(false);
     const [guideTab, setGuideTab] = useState<string>('tips');
     const [promptTab, setPromptTab] = useState<string>('notes');
@@ -35,10 +37,14 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
     const [versions, setVersions] = useState<{timestamp: string, response: string}[]>([]);
     const [selectedVersion, setSelectedVersion] = useState<{timestamp: string, response: string} | null>(null);
     const [selectedTimestamp, setSelectedTimestamp] = useState<string>('');
+    const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState<boolean>(false);
+    const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
     const handleAnswerChange = (modifiedAnswer: string) => {
         answer.current = modifiedAnswer;
         isAnswerModified.current = true;
+        setIsAnswerModifiedSinceSave(true);
+        onChange(true);
     };
 
     const handleNotesChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -105,8 +111,9 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
         if (isAnswerModified.current) {
             isAnswerModified.current = false;
             setFeedback({
-                ...feedback,
-                "general_overview": "getting feedback..."
+                "general_overview": "getting feedback...",
+                "excerpt_feedbacks": [],
+                "conclusion": "",
             })
             getFeedback(question.prompt, answer.current)
         }
@@ -136,30 +143,33 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
         setHighlight(excerpt);
     };
 
-    useEffect(() => {
-        const fetchVersions = async () => {
-            try {
-                const token = await auth.currentUser?.getIdToken(true);
-                const response = await fetch(`${process.env.BACKEND_URL}/essay_response_versions/${selectedCollege}/${question.id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!response.ok) {
-                    throw Error(`HTTP error! status: ${response.status}`);
+    const fetchVersions = async () => {
+        try {
+            const token = await auth.currentUser?.getIdToken(true);
+            const response = await fetch(`${process.env.BACKEND_URL}/essay_response_versions/${selectedCollege}/${question.id}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
-                const data = await response.json();
-                const fetchedVersions = data.content as {timestamp: string, response: string}[]
-                setVersions(fetchedVersions);
-                if (fetchedVersions.length > 0) {
-                    setSelectedVersion(fetchedVersions[0])
-                    setSelectedTimestamp(fetchedVersions[0].timestamp)
-                }            } catch (error: any) {
-                alert(`An error occurred: ${error.message}`);
+            });
+            if (!response.ok) {
+                throw Error(`HTTP error! status: ${response.status}`);
             }
-        };
+            const data = await response.json();
+            const fetchedVersions = data.content as {timestamp: string, response: string}[]
+            setVersions(fetchedVersions);
+            if (fetchedVersions.length > 0) {
+                setSelectedVersion(fetchedVersions[0])
+                setSelectedTimestamp(fetchedVersions[0].timestamp)
+            }            
+        } catch (error: any) {
+            alert(`An error occurred: ${error.message}`);
+        }
+    };
+
+    useEffect(() => {
         fetchVersions();
+        setIsAnswerModifiedSinceSave(false);
     }, [question]);
 
     const handleSave = async () => {
@@ -181,29 +191,8 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                 throw Error(`HTTP error! status: ${response.status}`);
             }
             alert('Essay saved successfully!');
-            const fetchVersions = async () => {
-                try {
-                    const token = await auth.currentUser?.getIdToken(true);
-                    const response = await fetch(`${process.env.BACKEND_URL}/essay_response_versions/${selectedCollege}/${question.id}`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    if (!response.ok) {
-                        throw Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    const fetchedVersions = data.content as {timestamp: string, response: string}[]
-                    setVersions(fetchedVersions);
-                    if (fetchedVersions.length > 0) {
-                        setSelectedVersion(fetchedVersions[0])
-                        setSelectedTimestamp(fetchedVersions[0].timestamp)
-                    }
-                } catch (error: any) {
-                    alert(`An error occurred: ${error.message}`);
-                }
-            };
+            setIsAnswerModifiedSinceSave(false);
+            onChange(false);
             fetchVersions();
         } catch (error: any) {
             alert(`An error occurred: ${error.message}`);
@@ -223,7 +212,7 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                             <Tab label="Response" value="response" />
                         </Tabs>
                         <TabPanel value={promptTab} index="response">
-                            <Tiptap highlight={highlight} onChange={handleAnswerChange} content={selectedVersion ? selectedVersion.response : ''}/>
+                            <Tiptap highlight={highlight} onChange={handleAnswerChange} content={selectedVersion ? selectedVersion.response : ''} isSaved={!isAnswerModifiedSinceSave}/>
                             <Button variant="contained" color="primary" onClick={() => handleFeedback()} style={{ marginTop: '10px' }}>
                                 Get Feedback
                             </Button>
@@ -238,11 +227,24 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                                     // Can directly use selectedVersion.timestamp. it wouldn't update for some reasons
                                     value={selectedTimestamp}
                                     onChange={(event: React.ChangeEvent<{ value: unknown }>) => {
-                                        const selectedTimestamp = event.target.value as string;
-                                        const selectedVersion = versions.find(version => version.timestamp === selectedTimestamp);
-                                        setSelectedVersion(selectedVersion || null);
-                                        setSelectedTimestamp(selectedTimestamp);
-                                        isAnswerModified.current = true;
+                                        if (isAnswerModifiedSinceSave) {
+                                            const selectedTimestamp = event.target.value as string;
+                                            setPendingAction(() => () => {
+                                                const selectedVersion = versions.find(version => version.timestamp === selectedTimestamp);
+                                                setSelectedVersion(selectedVersion || null);
+                                                setSelectedTimestamp(selectedTimestamp);
+                                                setIsAnswerModifiedSinceSave(false);
+                                                isAnswerModified.current = true;
+                                            });
+                                            setShowUnsavedChangesDialog(true);
+                                        } else {
+                                            const selectedTimestamp = event.target.value as string;
+                                            const selectedVersion = versions.find(version => version.timestamp === selectedTimestamp);
+                                            setSelectedVersion(selectedVersion || null);
+                                            setSelectedTimestamp(selectedTimestamp);
+                                            setIsAnswerModifiedSinceSave(false);
+                                            isAnswerModified.current = true;
+                                        }
                                     }}
                                     label="Version"
                                     style={{ minWidth: 275 }}
@@ -295,6 +297,27 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                     </Grid>
                 </Grid>
             </Paper>
+            <Dialog
+                open={showUnsavedChangesDialog}
+                onClose={() => setShowUnsavedChangesDialog(false)}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">{"Unsaved Changes"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        You have unsaved changes. Are you sure you want to overwrite them?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => { setShowUnsavedChangesDialog(false); pendingAction && pendingAction(); }} color="primary" autoFocus>
+                        Discard Changes
+                    </Button>
+                    <Button onClick={() => setShowUnsavedChangesDialog(false)} color="primary">
+                        Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Grid>
     );
 };
@@ -374,6 +397,9 @@ const FeedbackPage = () => {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [selectedCollege, setSelectedCollege] = useState<string>('');
     const [colleges, setColleges] = useState<string[]>([]);
+    const isAnswerModifiedSinceSave = useRef<boolean>(false);
+    const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState<boolean>(false);
+    const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
     const user = useContext(UserContext);
 
@@ -428,29 +454,7 @@ const FeedbackPage = () => {
                 alert(`An error occurred: ${error.message}`);
             }
 
-            try {
-                const token = await auth.currentUser?.getIdToken(true);
-                if (!token) {
-                    return;
-                }
-                const response = await fetch(`${process.env.BACKEND_URL}/essay_responses/${selectedCollege}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!response.ok) {
-                    throw Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                data.content.forEach((response: UserResponse) => {
-                    prompts[response.promptId].answer = response.response
-                });
-                console.log(prompts)
-                setQuestions(Object.values(prompts));
-            } catch (error: any) {
-                alert(`An error occurred: ${error.message}`);
-            }
+            setQuestions(Object.values(prompts));
         };
 
         fetchPrompts();
@@ -458,8 +462,30 @@ const FeedbackPage = () => {
     }, [selectedCollege]);
 
     const handleCollegeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-        setSelectedCollege(event.target.value as string);
+        if (isAnswerModifiedSinceSave.current) {
+            setShowUnsavedChangesDialog(true);
+            setPendingAction(() => () => {
+                setSelectedCollege(event.target.value as string);
+                isAnswerModifiedSinceSave.current = true;
+            });
+        } else {
+            setSelectedCollege(event.target.value as string);
+        }
     };
+
+    useEffect(() => {
+        const beforeUnloadListener = (e: BeforeUnloadEvent) => {
+            if (isAnswerModifiedSinceSave.current) {
+                e.preventDefault();
+                e.returnValue = "You have unsaved changes, do you want to leave?";
+            }
+        };
+
+        window.addEventListener('beforeunload', beforeUnloadListener);
+        return () => {
+            window.removeEventListener('beforeunload', beforeUnloadListener);
+        };
+    }, []);
 
     return (
         <Grid container spacing={3}>
@@ -478,8 +504,29 @@ const FeedbackPage = () => {
                 </Select>
             </FormControl>
             {questions?.map(q => (
-                <QuestionComponent selectedCollege={selectedCollege} question={q} />
+                <QuestionComponent selectedCollege={selectedCollege} question={q} onChange={(isModifiedSinceSave: boolean) => isAnswerModifiedSinceSave.current = isModifiedSinceSave} />
             ))}
+            <Dialog
+                open={showUnsavedChangesDialog}
+                onClose={() => setShowUnsavedChangesDialog(false)}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">{"Unsaved Changes"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        You have unsaved changes for this college. Please ensure they are all saved first or discard the changes.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => { setShowUnsavedChangesDialog(false); pendingAction && pendingAction(); }} color="primary" autoFocus>
+                        Discard Changes
+                    </Button>
+                    <Button onClick={() => setShowUnsavedChangesDialog(false)} color="primary">
+                        Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Grid>
     );
 };
