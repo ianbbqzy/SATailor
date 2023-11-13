@@ -241,6 +241,7 @@ const QuestionComponent = ({ selectedCollege, question }: { selectedCollege: str
                                         const selectedTimestamp = event.target.value as string;
                                         const selectedVersion = versions.find(version => version.timestamp === selectedTimestamp);
                                         setSelectedVersion(selectedVersion || null);
+                                        setSelectedTimestamp(selectedTimestamp);
                                         isAnswerModified.current = true;
                                     }}
                                     label="Version"
