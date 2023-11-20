@@ -401,7 +401,7 @@ const FeedbackPage = () => {
     const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState<boolean>(false);
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
-    const user = useContext(UserContext);
+    const { user } = useContext(UserContext);
 
     useEffect(() => {
         const fetchColleges = async () => {

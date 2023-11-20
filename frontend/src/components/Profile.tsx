@@ -4,7 +4,7 @@ import { TextField, Button, Typography, CardMedia, Card, CardContent } from '@ma
 
 const Profile = () => {
     const [resume, setResume] = useState<string>('');
-    const user = useContext(UserContext);
+    const { user } = useContext(UserContext);
 
     const handleSave = async () => {
         try {
