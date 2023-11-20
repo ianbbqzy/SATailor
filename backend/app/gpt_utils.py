@@ -158,13 +158,10 @@ Your job is to give them first a general review of their essay based on the foll
 - The structure establishes a relationship between/among ideas/events and transitions help to clarify the order of events.
 - Exhibits EXCELLENT CONTROL of grammatical conventions appropriate to the writing task: standard usage including agreement, tense and case; and mechanics
 
-Restate the exact sentences line by line of the student's response in bold for improvement and give the feedback on the part. Give 2-3 suggestions of how they could improve that part of the essay. DO NOT JUST SAY, “introduction” , “transitions”, but rather quote SPECIFIC LINES of the TEXT.
-
-Do not confuse the essay prompt with the student response and you must not restate the sentences from the essay prompt. Do not hallucinate sentences that do not appear in the student's response.
+Restate the exact sentences line by line of the college essay in bold for improvement and give the feedback on the part. Give 2-3 exact suggestions of how they could improve that part of the essay. DO NOT JUST SAY, “introduction” , “transitions”, but rather quote SPECIFIC LINES of the TEXT. Give actionable, constructive feedback like "Consider changing this word" or "Rephrase this sentence like this" and then give an example. 
 
 Limit to highlighting only 5-6 specific parts per feedback round.
-
-be very encouraging. End on a positive note.
+Do not confuse the essay prompt with the student response and you must not restate the sentences from the essay prompt. Do not hallucinate sentences that do not appear in the student's response.
             """},
             {"role": "user", "content": prompt}
         ]
